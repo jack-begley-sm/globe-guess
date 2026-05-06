@@ -1,0 +1,279 @@
+/* ============================================================
+   FILE: css/su.css
+   PURPOSE: Stitch Up specific styles.
+   ============================================================ */
+
+#screen-su-setter, #screen-su-guesser, #screen-su-spectator, #screen-su-reveal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background: var(--bg-1);
+}
+
+/* Timer styles */
+.su-timer {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--teal);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+.su-timer.danger {
+    color: var(--danger);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.1); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
+/* Setter screen */
+#setter-map {
+    width: 100%;
+    height: 100%;
+}
+
+.setter-instruction {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 10px 20px;
+    border-radius: 20px;
+    color: white;
+    font-weight: 600;
+    z-index: 100;
+    white-space: nowrap;
+}
+
+#btn-su-setter-confirm {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: var(--teal);
+    color: var(--bg-1);
+    font-weight: bold;
+    font-size: 1.2rem;
+    border: none;
+    z-index: 100;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#btn-su-setter-confirm:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Spectator view */
+.spectator-panel {
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 250px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.spectator-panel-header {
+    background: var(--bg-3);
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--teal);
+    text-transform: uppercase;
+}
+
+#spectator-map {
+    width: 100%;
+    height: 180px;
+}
+
+@media (max-width: 768px) {
+    .spectator-panel {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        width: auto;
+    }
+    #spectator-map {
+        height: 120px;
+    }
+}
+
+/* Reveal screen */
+#reveal-map {
+    width: 100%;
+    height: 100%;
+}
+
+.score-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--bg-3);
+    padding: 20px;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-out;
+    z-index: 110;
+    border-top: 2px solid var(--teal);
+}
+
+.score-panel.visible {
+    transform: translateY(0);
+}
+
+.score-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.score-label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.score-value {
+    font-family: 'DM Mono', monospace;
+    font-weight: bold;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.score-value.setter {
+    color: var(--teal);
+}
+
+/* Results screen */
+.results-container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    background: var(--bg-2);
+    margin-bottom: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    opacity: 0;
+}
+
+.leaderboard-rank {
+    width: 30px;
+    font-weight: bold;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.leaderboard-score {
+    font-family: 'DM Mono', monospace;
+}
+
+.award-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.round-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.round-summary-row {
+    background: var(--bg-2);
+    padding: 10px 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.round-summary-row:hover {
+    background: var(--bg-3);
+}
+
+.round-summary-info {
+    font-size: 0.8rem;
+}
+
+.round-summary-names {
+    font-weight: 600;
+    color: var(--teal);
+}
+
+.award-card {
+    background: var(--bg-3);
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--teal);
+}
+
+.award-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.award-winner {
+    font-weight: bold;
+    color: var(--teal);
+}
+
+/* Leaflet Overrides */
+.su-pin-label {
+    background: rgba(0,0,0,0.8);
+    border: none;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.distance-badge {
+    background: var(--teal);
+    color: var(--bg-1);
+    font-family: 'DM Mono', monospace;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    pointer-events: none;
+}

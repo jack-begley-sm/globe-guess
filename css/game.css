@@ -1,0 +1,81 @@
+/* ============================================================
+   FILE: css/game.css
+   PURPOSE: Game-specific UI elements (timer, round info, results).
+
+   RELATED:
+   - js/round.js        (controls timer and overlays)
+   - css/layout.css     (z-index management)
+   ============================================================ */
+
+#timer-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    z-index: 100;
+}
+
+#timer-progress {
+    width: 100%;
+    height: 100%;
+    background: var(--accent-color);
+    transition: width 1s linear, background 0.3s;
+}
+
+#timer-progress.urgent {
+    background: var(--error-color);
+}
+
+#round-info {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: rgba(0,0,0,0.6);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 50;
+    backdrop-filter: blur(4px);
+}
+
+#btn-submit-guess {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    z-index: 60;
+}
+
+#round-result-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    pointer-events: none;
+}
+
+.result-card {
+    background: var(--card-bg);
+    padding: 1.5rem 3rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.dist-val { color: var(--text-primary); margin-bottom: 0.5rem; }
+.score-val { color: var(--success-color); font-size: 1.8rem; }

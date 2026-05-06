@@ -1,0 +1,46 @@
+/* ============================================================
+   FILE: css/map.css
+   PURPOSE: Guess map styles (Leaflet container).
+
+   RELATED:
+   - js/map.js          (drives class changes)
+   - index.html         (#guess-map-container)
+   ============================================================ */
+
+#guess-map-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 160px;
+    height: 120px;
+    z-index: 50;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: width 0.3s ease, height 0.3s ease;
+    background: #000;
+}
+
+#guess-map-container.expanded {
+    width: 320px;
+    height: 240px;
+    border-color: var(--accent-color);
+}
+
+/* Mobile adjustments */
+@media (max-width: 390px) {
+    #guess-map-container.expanded {
+        width: 300px;
+        height: 220px;
+    }
+}
+
+.leaflet-container {
+    background: #000 !important;
+    z-index: 100;
+}
+
+/* Custom Leaflet Marker styles */
+.leaflet-marker-icon {
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}

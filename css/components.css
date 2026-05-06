@@ -1,0 +1,63 @@
+/* ============================================================
+   FILE: css/components.css
+   PURPOSE: Reusable UI components like buttons and cards.
+
+   RELATED:
+   - css/base.css       (variables)
+   - js/lobby.js        (button actions)
+   ============================================================ */
+
+.btn-primary {
+    background: var(--color-teal);
+    color: var(--color-bg);
+    height: 56px;
+    max-width: 60%;
+    min-width: fit-content;
+    padding: 0px 20px;
+    width: -webkit-fill-available;
+    border-radius: var(--radius-button);
+    text-transform: uppercase;
+}
+
+.btn-primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+    background-color: #444;
+    color: #888;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--accent-color);
+    border: 2px solid var(--accent-color);
+    padding: 0.8rem;
+    border-radius: 8px;
+    font-weight: bold;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #333;
+}
+
+.res-round { color: var(--text-secondary); }
+.res-score { font-weight: bold; color: var(--success-color); }
+
+.total-score-box {
+    margin: 1.5rem 0;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+#total-final-score {
+    color: var(--accent-color);
+}

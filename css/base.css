@@ -1,0 +1,69 @@
+/* ============================================================
+   FILE: css/base.css
+   PURPOSE: Global styles, resets, and dark theme variables.
+
+   RELATED:
+   - css/layout.css     (uses variables)
+   - js/state.js        (global theme)
+   ============================================================ */
+
+:root {
+  --color-bg:         #0a1226;   /* deep navy — primary background */
+  --color-bg-2:       #101c3a;   /* slightly lighter navy — cards, panels */
+  --color-bg-3:       #1a2a50;   /* elevated surfaces, modals */
+  --color-ivory:      #f0e8d2;   /* primary text, GLOBE wordmark */
+  --color-teal:       #40c8b4;   /* primary accent — GUESS wordmark, CTAs, pins */
+  --color-teal-dim:   #2a8a7a;   /* teal at reduced intensity — borders, hover */
+  --color-muted:      #5068a0;   /* secondary text, labels, grid lines */
+  --color-danger:     #e05050;   /* timer warning, errors */
+  --color-gold:       #d2aa50;   /* score highlights, top rank */
+
+  --font-display:  'BigShoulders Display', sans-serif;
+  --font-body:     'Outfit', sans-serif;
+  --font-mono:     'DM Mono', monospace;
+  
+  --spacing-unit: 8px;
+  --radius-button: 8px;
+  --radius-card: 12px;
+  --radius-modal: 16px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--color-bg);
+    color: var(--color-ivory);
+    font-family: var(--font-body);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    line-height: 1.5;
+}
+
+h1, h2, h3 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+}
+
+button {
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+input {
+    font-family: var(--font-body);
+}
+
+.hidden {
+    display: none !important;
+}

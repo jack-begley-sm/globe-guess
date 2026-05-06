@@ -1,0 +1,8 @@
+{
+  "appId": "com.globeguess.app",
+  "appName": "Globe Guess",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true
+  }
+}
