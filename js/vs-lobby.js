@@ -8,6 +8,8 @@ import { getUser, setUser } from './user.js';
 import { initHost, kickPlayer as hostKickPlayer, broadcastEvent } from './vs-host.js';
 import { startVsRound } from './vs-round.js';
 
+const GITHUB_PAGES_URL = 'https://jackbegley-sm.github.io/globe-guess';
+
 export function initVsSetup() {
     const setupNextBtn = document.getElementById('btn-vs-setup-next');
     const nameInput = document.getElementById('input-vs-host-name');
@@ -120,27 +122,25 @@ async function handleSetupNext() {
 
     // Prepare share screen
     document.getElementById('display-room-code').textContent = roomCode;
-    const localIP = await getLocalIP();
-    const port = window.location.port || '5173';
-
-    if (!localIP) {
-        // Detection failed — show editable field with placeholder
-        const urlInput = document.getElementById('input-share-url');
-        urlInput.value = `http://[YOUR-IP]:${port}/join/${roomCode}`;
-        urlInput.readOnly = false;
-        urlInput.select();
-        const statusEl = document.querySelector('.share-content p');
-        if (statusEl) {
-            statusEl.textContent = 'Could not detect your IP automatically. ' +
-                'Find it in WiFi settings and edit the URL above.';
-            statusEl.style.color = 'var(--color-danger)';
-        }
+    
+    // Packaged app always uses GitHub Pages so guests don't need the app
+    // Browser dev mode uses local network IP for testing
+    let joinURL;
+    if (window.Capacitor?.isNativePlatform()) {
+        joinURL = `${GITHUB_PAGES_URL}/?join=${roomCode}`;
     } else {
-        const joinURL = `http://${localIP}:${port}/join/${roomCode}`;
-        const urlInput = document.getElementById('input-share-url');
-        urlInput.value = joinURL;
-        updateWhatsAppLink(joinURL);
+        const port = window.location.port || '5173';
+        const hostname = window.location.hostname;
+        joinURL = `http://${hostname}:${port}/?join=${roomCode}`;
     }
+
+    const urlInput = document.getElementById('input-share-url');
+    if (urlInput) {
+        urlInput.value = joinURL;
+        urlInput.readOnly = false;
+    }
+
+    updateWhatsAppLink(joinURL);
 
     function updateWhatsAppLink(url) {
         const whatsappBtn = document.getElementById('btn-share-whatsapp');
@@ -148,7 +148,6 @@ async function handleSetupNext() {
         whatsappBtn.href = `https://wa.me/?text=${text}`;
     }
 
-    const urlInput = document.getElementById('input-share-url');
     urlInput.addEventListener('input', () => {
         updateWhatsAppLink(urlInput.value);
     });
@@ -184,66 +183,26 @@ export function generateRoomCode() {
 }
 
 export async function getLocalIP() {
-    // Capacitor native — use WiFi plugin for real device IP
+    // Native Capacitor app — use WiFi plugin for real device IP
     if (window.Capacitor?.isNativePlatform()) {
         try {
             const { CapacitorWifi } = await import('@capgo/capacitor-wifi');
             const info = await CapacitorWifi.getWifiInfo();
             if (info?.ip && info.ip !== '0.0.0.0') {
-                console.log('Got IP from CapacitorWifi:', info.ip);
                 return info.ip;
             }
         } catch (e) {
-            console.warn('CapacitorWifi failed, falling back:', e);
+            console.warn('CapacitorWifi failed:', e);
         }
     }
 
-    // Web browser — if already accessed via network IP, use it directly
+    // Web browser — use hostname directly
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    if (hostname && hostname !== '') {
         return hostname;
     }
 
-    // Localhost fallback — STUN detection
-    return new Promise((resolve) => {
-        let resolved = false;
-
-        const tryResolve = (ip) => {
-            if (resolved) return;
-            if (
-                ip.startsWith('192.168.') ||
-                ip.startsWith('10.')      ||
-                /^172\.(1[6-9]|2\d|3[01])\./.test(ip)
-            ) {
-                resolved = true;
-                resolve(ip);
-            }
-        };
-
-        const pc = new RTCPeerConnection({
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-            ]
-        });
-
-        pc.createDataChannel('');
-        pc.createOffer().then(o => pc.setLocalDescription(o));
-        pc.onicecandidate = (e) => {
-            if (!e.candidate) return;
-            const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(
-                e.candidate.candidate
-            );
-            if (match) tryResolve(match[1]);
-        };
-
-        setTimeout(() => {
-            if (!resolved) {
-                resolved = true;
-                resolve(null);
-            }
-        }, 4000);
-    });
+    return null;
 }
 
 export function renderPlayerList() {

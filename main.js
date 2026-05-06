@@ -71,23 +71,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // VS Join Link logic
-    const path = window.location.pathname;
-    if (path.includes('/join/')) {
-        const roomCode = path.split('/join/')[1];
-        if (roomCode) {
-            vsState.roomCode = roomCode;
-            document.getElementById('modal-vs-join').classList.remove('hidden');
-        }
+    // Use query parameters instead of path — works on GitHub Pages
+    const params = new URLSearchParams(window.location.search);
+    const vsCode = params.get('join');
+    const suCode = params.get('join-su');
+
+    if (vsCode) {
+        vsState.roomCode = vsCode;
+        document.getElementById('modal-vs-join').classList.remove('hidden');
     }
 
-    // Stitch Up Join Link logic
-    if (path.includes('/join-su/')) {
-        const roomCode = path.split('/join-su/')[1];
-        if (roomCode) {
-            suState.roomCode = roomCode;
-            document.getElementById('modal-su-join').classList.remove('hidden');
-        }
+    if (suCode) {
+        suState.roomCode = suCode;
+        document.getElementById('modal-su-join').classList.remove('hidden');
     }
 
     document.getElementById('btn-vs-join-game').addEventListener('click', () => {
