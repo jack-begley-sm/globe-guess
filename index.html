@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Globe Guess</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+    <!-- CSS Imports -->
+  <script type="module" crossorigin src="/globe-guess/assets/index-DFUEXnFO.js"></script>
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CwaZ9BiI.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-BoJx7yo_.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CXBqVGRQ.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-DaHaaXJB.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-ByB7-Wnm.css">
+</head>
+<body>
+    <div id="app">
+        <!-- SCREEN 1: LANDING -->
+        <div id="screen-landing" class="screen">
+            <div class="landing-content">
+                <i data-lucide="settings" class="settings-icon"></i>
+                <div class="logo-container">
+                    <img src="/globe-guess/assets/logo-CBl90VRx.png" alt="Globe Guess" class="logo">
+                    <div class="version-tag" id="version-display">v0.1.0</div>
+                </div>
+                <div class="mode-selector">
+                    <button id="btn-mode-classic" class="btn-mode active">CLASSIC</button>
+                    <button id="btn-mode-vs" class="btn-mode active">VERSUS</button>
+                    <button id="btn-mode-su" class="btn-mode active">STITCH UP</button>
+                    <button class="btn-mode disabled" disabled>
+                        CO-OP <i data-lucide="lock" class="lock-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: LOBBY -->
+        <div id="screen-lobby" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <button id="btn-lobby-back" class="btn-back"><i data-lucide="arrow-left"></i></button>
+                    <h1>CLASSIC MODE</h1>
+                </header>
+
+                <div class="lobby-sections">
+                    <section class="config-section">
+                        <label>YOUR NAME</label>
+                        <input type="text" id="input-player-name" placeholder="Enter your name">
+                        <div id="error-name" class="error-msg hidden">Please enter your name</div>
+                    </section>
+
+                    <section class="config-section">
+                        <label>ROUNDS</label>
+                        <div class="segmented-control" id="control-rounds">
+                            <button data-value="3">3</button>
+                            <button data-value="5" class="active">5</button>
+                            <button data-value="10">10</button>
+                        </div>
+                    </section>
+
+                    <section class="config-section">
+                        <label>TIME LIMIT</label>
+                        <div class="segmented-control" id="control-time">
+                            <button data-value="30">30s</button>
+                            <button data-value="60">60s</button>
+                            <button data-value="90" class="active">90s</button>
+                            <button data-value="120">120s</button>
+                            <button data-value="unlimited">∞</button>
+                        </div>
+                    </section>
+
+                    <section class="config-section">
+                        <div class="flex-between">
+                            <label>SPEED BONUS</label>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-speed-bonus">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div id="speed-bonus-settings" class="hidden">
+                            <input type="range" id="slider-speed-bonus" min="0" max="50" value="20">
+                            <div class="range-label"><span id="val-speed-bonus">20</span>% of score based on how fast you answer</div>
+                        </div>
+                    </section>
+
+                    <section class="config-section">
+                        <label>REGION</label>
+                        <div class="region-grid">
+                            <button data-region="WORLD" class="active">🌍 World</button>
+                            <button data-region="UK">🇬🇧 UK</button>
+                            <button data-region="EUROPE">🌍 Europe</button>
+                            <button data-region="AMERICAS">🌎 Americas</button>
+                            <button data-region="AFRICA">🌍 Africa</button>
+                            <button data-region="ASIA">🌏 Asia</button>
+                            <button data-region="OCEANIA">🌏 Oceania</button>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="lobby-footer">
+                    <button id="btn-start-game" class="btn-start">START GAME</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: GAME -->
+        <div id="screen-game" class="screen hidden">
+            <header class="game-top-bar">
+                <div class="round-indicator">ROUND <span id="current-round">1</span> / <span id="total-rounds">5</span></div>
+                <div class="game-timer" id="display-timer">90</div>
+            </header>
+            <div id="timer-progress-bar" class="timer-progress"></div>
+
+            <div id="street-view-container"></div>
+
+            <div id="guess-map-widget" class="map-widget collapsed">
+                <div id="guess-map-container">
+                    <div id="guess-map"></div>
+                </div>
+                <button id="btn-submit-guess" class="btn-submit" disabled>SUBMIT GUESS</button>
+            </div>
+
+            <div id="round-result-overlay" class="overlay hidden">
+                <div class="result-content">
+                    <div id="result-distance" class="distance-text">247 km</div>
+                    <div id="result-score-breakdown" class="score-breakdown hidden">
+                        <div class="base-score">Base: <span id="val-base-score">0</span></div>
+                        <div class="speed-bonus">Speed: +<span id="val-speed-score">0</span></div>
+                    </div>
+                    <div id="result-score" class="score-text">+4,850 pts</div>
+                    <div id="result-mini-map"></div>
+                    <button id="btn-next-round" class="btn-next">NEXT ROUND</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: RESULTS -->
+        <div id="screen-results" class="screen hidden">
+            <div class="results-container">
+                <header class="results-header">
+                    <h1>GAME OVER</h1>
+                    <div class="total-score-label">TOTAL SCORE</div>
+                    <div class="total-score" id="final-total-score">24,500</div>
+                </header>
+
+                <div id="results-list" class="results-list">
+                    <!-- Round rows injected here -->
+                </div>
+
+                <div class="results-actions">
+                    <button id="btn-play-again" class="btn-primary">PLAY AGAIN</button>
+                    <button id="btn-share" class="btn-secondary">SHARE RESULT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VS MODE SCREENS -->
+
+        <!-- SCREEN: VS SETUP -->
+        <div id="screen-vs-setup" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <button id="btn-vs-setup-back" class="btn-back"><i data-lucide="arrow-left"></i></button>
+                    <h1>VS MODE SETUP</h1>
+                </header>
+                <div class="lobby-sections">
+                    <section class="config-section">
+                        <label>YOUR NAME</label>
+                        <input type="text" id="input-vs-host-name" placeholder="Enter your name">
+                        <div id="error-vs-host-name" class="error-msg hidden">Please enter your name</div>
+                    </section>
+                    <section class="config-section">
+                        <label>ROUNDS</label>
+                        <div class="segmented-control" id="control-vs-rounds">
+                            <button data-value="3">3</button>
+                            <button data-value="5" class="active">5</button>
+                            <button data-value="10">10</button>
+                        </div>
+                    </section>
+                    <section class="config-section">
+                        <label>REGION</label>
+                        <div class="region-grid" id="vs-region-grid">
+                            <button data-region="WORLD" class="active">🌍 World</button>
+                            <button data-region="UK">🇬🇧 UK</button>
+                            <button data-region="EUROPE">🌍 Europe</button>
+                            <button data-region="AMERICAS">🌎 Americas</button>
+                            <button data-region="AFRICA">🌍 Africa</button>
+                            <button data-region="ASIA">🌏 Asia</button>
+                            <button data-region="OCEANIA">🌏 Oceania</button>
+                        </div>
+                    </section>
+                </div>
+                <div class="lobby-footer">
+                    <button id="btn-vs-setup-next" class="btn-start">NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MULTIPLAYER SHARED SCREENS -->
+
+        <!-- SCREEN: SHARE -->
+        <div id="screen-multiplayer-share" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <h1>SHARE GAME</h1>
+                </header>
+                <div class="share-content">
+                    <p>Invite friends to join your game</p>
+                    <div class="room-code-display" id="display-room-code">ROOMCODE</div>
+                    <div class="share-url-container">
+                        <input type="text" id="input-share-url" class="monospace-input">
+                        <button id="btn-copy-link" class="btn-icon"><i data-lucide="copy"></i></button>
+                    </div>
+                    <div class="share-actions">
+                        <a id="btn-share-whatsapp" class="btn-whatsapp" target="_blank">
+                            <i data-lucide="message-circle"></i> SHARE VIA WHATSAPP
+                        </a>
+                    </div>
+                </div>
+                <div class="lobby-footer">
+                    <button id="btn-share-continue" class="btn-start">CONTINUE TO LOBBY</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: LOBBY -->
+        <div id="screen-multiplayer-lobby" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <h1>LOBBY</h1>
+                    <div class="room-code-tag" id="lobby-room-code">CODE: XXXX</div>
+                </header>
+                <div class="lobby-sections">
+                    <div class="section-label">PLAYERS (<span id="lobby-player-count">1</span>)</div>
+                    <div id="lobby-player-list" class="player-list">
+                        <!-- Players injected here -->
+                    </div>
+                    <div id="lobby-status" class="lobby-status">Waiting for players...</div>
+                    <div id="lobby-error" class="error-msg hidden"></div>
+                </div>
+                <div class="lobby-footer">
+                    <button id="btn-start-game" class="btn-start">START GAME</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: WAITING (GUEST) -->
+        <div id="screen-multiplayer-waiting" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <h1 id="waiting-title">JOINED GAME</h1>
+                </header>
+                <div class="waiting-content">
+                    <div class="loader-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <p id="waiting-subtitle">Waiting for host to start...</p>
+                    <div id="waiting-player-list" class="player-list">
+                        <!-- Players injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: VS GAME -->
+        <div id="screen-vs-game" class="screen hidden">
+            <header class="game-top-bar">
+                <div class="round-indicator">ROUND <span id="vs-current-round">1</span> / <span id="vs-total-rounds">5</span></div>
+                <div class="vs-player-status-list" id="vs-game-player-status">
+                    <!-- Statuses injected here -->
+                </div>
+                <div class="game-timer" id="vs-display-timer">180</div>
+            </header>
+            <div id="vs-timer-progress-bar" class="timer-progress"></div>
+
+            <div id="vs-street-view-container"></div>
+
+            <div id="vs-guess-map-widget" class="map-widget collapsed">
+                <div id="vs-guess-map-container">
+                    <div id="vs-guess-map"></div>
+                </div>
+                <div id="vs-waiting-message" class="waiting-message hidden">Waiting for other players...</div>
+                <button id="btn-vs-submit-guess" class="btn-submit" disabled>SUBMIT GUESS</button>
+            </div>
+
+            <!-- VS ROUND REVEAL OVERLAY -->
+            <div id="vs-round-reveal-overlay" class="overlay overlay-full hidden">
+                <div id="vs-reveal-map"></div>
+                <div id="vs-round-leaderboard" class="round-leaderboard-panel">
+                    <!-- Leaderboard rows -->
+                </div>
+                <div class="reveal-actions">
+                     <button id="btn-vs-next-round" class="btn-next hidden">NEXT ROUND</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: VS RESULTS -->
+        <div id="screen-vs-results" class="screen hidden">
+            <div class="results-container">
+                <header class="results-header">
+                    <h1>FINAL RESULTS</h1>
+                </header>
+
+                <div id="vs-final-leaderboard" class="results-list">
+                    <!-- Final ranking -->
+                </div>
+
+                <div id="vs-awards-container" class="awards-grid">
+                    <!-- Special awards -->
+                </div>
+
+                <div id="vs-round-summary" class="results-list">
+                    <!-- Per-round summary injected here -->
+                </div>
+
+                <div class="results-actions">
+                    <button id="btn-vs-play-again" class="btn-primary hidden">PLAY AGAIN</button>
+                    <button id="btn-vs-quit" class="btn-secondary">QUIT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JOIN MODAL -->
+        <div id="modal-vs-join" class="modal modal-vs hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <h2>You've been invited to a Globe Guess game</h2>
+                <div class="config-section">
+                    <label>YOUR NAME</label>
+                    <input type="text" id="input-vs-guest-name" placeholder="Enter your name">
+                    <div id="error-vs-guest-name" class="error-msg hidden">Please enter your name</div>
+                </div>
+                <button id="btn-vs-join-game" class="btn-start">JOIN</button>
+            </div>
+        </div>
+
+        <!-- DISCONNECT MODAL -->
+        <div id="modal-vs-disconnect" class="modal modal-vs hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <h2 id="vs-disconnect-title">Connection Lost</h2>
+                <p id="vs-disconnect-message">The host may have left.</p>
+                <button id="btn-vs-return-home" class="btn-start">RETURN TO HOME</button>
+            </div>
+        </div>
+
+        <!-- MODAL -->
+        <div id="modal-round-detail" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button id="btn-close-modal" class="btn-close-modal"><i data-lucide="x"></i></button>
+                <div id="detail-map"></div>
+            </div>
+        </div>
+
+        <!-- STITCH UP SCREENS -->
+
+        <!-- #screen-su-setup: Host config -->
+        <div id="screen-su-setup" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <button class="btn-back su-return-home"><i data-lucide="arrow-left"></i></button>
+                    <h1>STITCH UP SETUP</h1>
+                </header>
+                <div class="lobby-sections">
+                    <section class="config-section">
+                        <label>YOUR NAME</label>
+                        <input type="text" id="input-su-host-name" placeholder="Enter your name">
+                        <div id="error-su-host-name" class="error-msg hidden">Please enter your name</div>
+                    </section>
+                    <section class="config-section">
+                        <label>ROUNDS</label>
+                        <div class="segmented-control" id="control-su-rounds">
+                            <button data-value="3">3</button>
+                            <button data-value="5" class="active">5</button>
+                            <button data-value="10">10</button>
+                        </div>
+                    </section>
+                    <section class="config-section">
+                        <label>REGION</label>
+                        <div class="region-grid" id="su-region-grid">
+                            <button data-region="WORLD" class="active">🌍 World</button>
+                            <button data-region="UK">🇬🇧 UK</button>
+                            <button data-region="EUROPE">🌍 Europe</button>
+                            <button data-region="AMERICAS">🌎 Americas</button>
+                            <button data-region="AFRICA">🌍 Africa</button>
+                            <button data-region="ASIA">🌏 Asia</button>
+                            <button data-region="OCEANIA">🌏 Oceania</button>
+                        </div>
+                    </section>
+                </div>
+                <div class="lobby-footer">
+                    <button id="btn-su-setup-next" class="btn-primary">NEXT</button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- #screen-su-setter: Setter's map picker -->
+        <div id="screen-su-setter" class="screen hidden">
+            <div class="su-timer" id="su-setter-timer">30</div>
+            <div class="setter-instruction" id="su-setter-instruction">Pick a location to stitch up [NAME]</div>
+            <div id="setter-map"></div>
+            <button id="btn-su-setter-confirm" disabled>CONFIRM LOCATION</button>
+        </div>
+
+        <!-- #screen-su-guesser: Guesser's Street View + guess map -->
+        <div id="screen-su-guesser" class="screen hidden">
+            <div class="game-header">
+                <div class="round-info">
+                    <span id="su-guesser-round-num">ROUND 1 / 5</span>
+                    <small id="su-guesser-setter-name">Setter chose this for you</small>
+                </div>
+                <div class="su-timer" id="su-guesser-timer">120</div>
+            </div>
+            <div id="su-street-view-container" class="street-view-full"></div>
+            
+            <div class="guess-map-container" id="su-guess-map-container">
+                <div id="su-guess-map"></div>
+                <button id="btn-su-submit-guess" class="btn-primary" disabled>SUBMIT GUESS</button>
+            </div>
+        </div>
+
+        <!-- #screen-su-spectator: Spectator readonly view -->
+        <div id="screen-su-spectator" class="screen hidden">
+            <div class="game-header">
+                <div class="round-info">
+                    <span id="su-spectator-round-num">ROUND 1 / 5</span>
+                    <small id="su-spectator-label">SPECTATING — [NAME] is guessing</small>
+                </div>
+                <div class="su-timer" id="su-spectator-timer">120</div>
+            </div>
+            <div id="su-spectator-sv-container" class="street-view-full"></div>
+            <div class="spectator-panel">
+                <div class="spectator-panel-header">LIVE GUESS TRACKER</div>
+                <div id="spectator-map"></div>
+            </div>
+        </div>
+
+        <!-- #screen-su-reveal: Post-round reveal -->
+        <div id="screen-su-reveal" class="screen hidden">
+            <div id="reveal-map"></div>
+            <div class="score-panel" id="su-score-panel">
+                <div class="score-row">
+                    <div>
+                        <div class="score-label" id="su-reveal-guesser-name">GUESSER</div>
+                        <div class="score-value" id="su-reveal-guesser-score">0</div>
+                        <small id="su-reveal-guesser-details">0 km</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="score-label">TOTAL</div>
+                        <div class="score-value" id="su-reveal-guesser-total">0</div>
+                    </div>
+                </div>
+                <div class="score-row">
+                    <div>
+                        <div class="score-label" id="su-reveal-setter-name">SETTER</div>
+                        <div class="score-value setter" id="su-reveal-setter-score">0</div>
+                        <small id="su-reveal-setter-details">Inverse score</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="score-label">TOTAL</div>
+                        <div class="score-value setter" id="su-reveal-setter-total">0</div>
+                    </div>
+                </div>
+                <div class="lobby-footer" style="padding: 10px 0 0 0;">
+                    <button id="btn-su-next-round" class="btn-primary">NEXT ROUND</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- #screen-su-results: Final leaderboard -->
+        <div id="screen-su-results" class="screen hidden">
+            <div class="results-container">
+                <h1 class="results-title">FINAL RESULTS</h1>
+                <div id="su-leaderboard" class="leaderboard">
+                    <!-- Leaderboard rows here -->
+                </div>
+                
+                <h2 class="section-title" style="margin-top: 30px;">ROUND SUMMARY</h2>
+                <div id="su-round-summary" class="round-summary-grid">
+                    <!-- Round rows here -->
+                </div>
+
+                <h2 class="section-title" style="margin-top: 30px;">SPECIAL AWARDS</h2>
+                <div id="su-awards" class="award-grid">
+                    <!-- Awards here -->
+                </div>
+
+                <div class="lobby-footer" style="margin-top: 40px; position: static; padding: 0;">
+                    <button id="btn-su-play-again" class="btn-primary">PLAY AGAIN</button>
+                    <button class="btn-secondary su-return-home" style="margin-top: 10px;">QUIT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal for Stitch Up Join (Guest) -->
+    <div id="modal-su-join" class="modal hidden">
+        <div class="modal-content">
+            <h2>STITCH UP</h2>
+            <p>You've been invited to a Stitch Up game</p>
+            <div class="config-section">
+                <label>YOUR NAME</label>
+                <input type="text" id="input-su-guest-name" placeholder="Enter your name">
+                <div id="error-su-guest-name" class="error-msg hidden">Please enter your name</div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-su-return-home" class="btn-secondary">CANCEL</button>
+                <button id="btn-su-join-game" class="btn-primary">JOIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Kicked/Disconnected -->
+    <div id="modal-su-message" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="su-message-title">GAME OVER</h2>
+            <p id="su-message-body">You were removed from the game.</p>
+            <div class="modal-footer">
+                <button class="btn-primary su-return-home">RETURN TO HOME</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
