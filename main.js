@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-vs-return-home').addEventListener('click', () => {
-        window.location.href = '/';
+        window.location.href = './';
     });
 
     document.getElementById('btn-su-join-game').addEventListener('click', () => {
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-su-return-home').addEventListener('click', () => {
-        window.location.href = '/';
+        window.location.href = './';
     });
     
     initLobby();

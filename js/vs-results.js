@@ -33,7 +33,7 @@ export function showVsResults() {
         if (!vsState.isHost) {
             quitGame();
         }
-        window.location.href = '/';
+        window.location.href = './';
     };
 
     // Close modal event

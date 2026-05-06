@@ -27,7 +27,7 @@ export function initSuSetup() {
 
     document.querySelectorAll('.su-return-home').forEach(btn => {
         btn.addEventListener('click', () => {
-            window.location.href = '/';
+            window.location.href = './';
         });
     });
 
