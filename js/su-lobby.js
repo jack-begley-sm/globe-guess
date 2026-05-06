@@ -8,6 +8,8 @@ import { getUser, setUser } from './user.js';
 import { getLocalIP } from './vs-lobby.js';
 import { initSuHost, kickSuPlayer, startStitchUpGame } from './su-host.js';
 
+const GITHUB_PAGES_URL = 'https://jackbegley-sm.github.io/globe-guess';
+
 export function initSuSetup() {
     const setupNextBtn = document.getElementById('btn-su-setup-next');
     const nameInput = document.getElementById('input-su-host-name');
@@ -121,25 +123,22 @@ async function handleSuSetupNext() {
     document.getElementById('display-room-code').textContent = roomCode;
     document.getElementById('lobby-room-code').textContent = `CODE: ${roomCode}`;
     
-    const localIP = await getLocalIP();
-    const port = window.location.port || '5173';
-
-    if (!localIP) {
-        // Detection failed — show editable field with placeholder
-        const urlInput = document.getElementById('input-share-url');
-        urlInput.value = `http://[YOUR-IP]:${port}/join-su/${roomCode}`;
-        urlInput.readOnly = false;
-        urlInput.select();
-        const statusEl = document.querySelector('.share-content p');
-        if (statusEl) {
-            statusEl.textContent = 'Could not detect your IP automatically. ' +
-                'Find it in WiFi settings and edit the URL above.';
-            statusEl.style.color = 'var(--color-danger)';
-        }
+    let joinURL;
+    if (window.Capacitor?.isNativePlatform()) {
+        joinURL = `${GITHUB_PAGES_URL}/?join-su=${roomCode}`;
     } else {
-        const joinURL = `http://${localIP}:${port}/join-su/${roomCode}`;
-        const urlInput = document.getElementById('input-share-url');
+        const port = window.location.port || '5173';
+        const hostname = window.location.hostname;
+        joinURL = `http://${hostname}:${port}/?join-su=${roomCode}`;
+    }
+
+    const urlInput = document.getElementById('input-share-url');
+    if (urlInput) {
         urlInput.value = joinURL;
+        urlInput.readOnly = false;
+    }
+
+    if (typeof updateWhatsAppLink === 'function') {
         updateWhatsAppLink(joinURL);
     }
 
@@ -149,7 +148,6 @@ async function handleSuSetupNext() {
         whatsappBtn.href = `https://wa.me/?text=${text}`;
     }
 
-    const urlInput = document.getElementById('input-share-url');
     urlInput.addEventListener('input', () => {
         updateWhatsAppLink(urlInput.value);
     });
