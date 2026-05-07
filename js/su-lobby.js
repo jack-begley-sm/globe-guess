@@ -8,7 +8,7 @@ import { getUser, setUser } from './user.js';
 import { getLocalIP } from './vs-lobby.js';
 import { initSuHost, kickSuPlayer, startStitchUpGame } from './su-host.js';
 
-const GITHUB_PAGES_URL = 'https://jackbegley-sm.github.io/globe-guess';
+const GITHUB_PAGES_URL = 'https://jack-begley-sm.github.io/globe-guess';
 
 export function initSuSetup() {
     const setupNextBtn = document.getElementById('btn-su-setup-next');
@@ -127,9 +127,15 @@ async function handleSuSetupNext() {
     if (window.Capacitor?.isNativePlatform()) {
         joinURL = `${GITHUB_PAGES_URL}/?join-su=${roomCode}`;
     } else {
-        const port = window.location.port || '5173';
         const hostname = window.location.hostname;
-        joinURL = `http://${hostname}:${port}/?join-su=${roomCode}`;
+        const port = window.location.port || '5173';
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            // localhost is unreachable by guests — use GitHub Pages
+            joinURL = `${GITHUB_PAGES_URL}/?join-su=${roomCode}`;
+        } else {
+            // Real network IP — guests on same WiFi can reach this
+            joinURL = `http://${hostname}:${port}/?join-su=${roomCode}`;
+        }
     }
 
     const urlInput = document.getElementById('input-share-url');
@@ -155,7 +161,8 @@ async function handleSuSetupNext() {
     document.getElementById('btn-copy-link').onclick = () => {
         navigator.clipboard.writeText(urlInput.value);
         const btn = document.getElementById('btn-copy-link');
-        const icon = btn.querySelector('i');
+        const icon = btn.querySelector('i, svg');
+        if (!icon) return;
         const oldIcon = icon.getAttribute('data-lucide');
         icon.setAttribute('data-lucide', 'check');
         if (window.lucide) window.lucide.createIcons();
@@ -183,40 +190,42 @@ export function generateSuRoomCode() {
 }
 
 export function renderSuPlayerList(players) {
-    const list = document.getElementById('lobby-player-list');
+    const container = suState.isHost ? document.getElementById('lobby-player-list') : document.getElementById('waiting-player-list');
     const count = document.getElementById('lobby-player-count');
     const waitingMsg = document.getElementById('lobby-status');
     
-    if (!list) return;
+    if (!container) return;
     
-    list.innerHTML = '';
-    count.textContent = players.length;
+    container.innerHTML = '';
+    if (count) count.textContent = players.length;
     
-    if (players.length > 1) {
-        waitingMsg.classList.add('hidden');
-    } else {
-        waitingMsg.classList.remove('hidden');
+    if (waitingMsg) {
+        if (players.length > 1) {
+            waitingMsg.classList.add('hidden');
+        } else {
+            waitingMsg.classList.remove('hidden');
+        }
     }
 
     players.forEach(player => {
-        const row = document.createElement('div');
-        row.className = 'player-row';
-        if (!player.connected) row.classList.add('disconnected');
+        const item = document.createElement('div');
+        item.className = 'player-item';
+        if (!player.connected) item.classList.add('disconnected');
         
-        row.innerHTML = `
+        item.innerHTML = `
             <div class="player-info">
                 <span class="player-name">${player.name} ${player.peerId === suState.roomCode ? '(HOST)' : ''}</span>
             </div>
             ${(suState.isHost && player.peerId !== suState.roomCode) ? 
                 `<button class="btn-kick" data-id="${player.peerId}"><i data-lucide="user-x"></i></button>` : ''}
         `;
-        list.appendChild(row);
+        container.appendChild(item);
     });
 
     if (window.lucide) window.lucide.createIcons();
 
     // Add kick listeners
-    list.querySelectorAll('.btn-kick').forEach(btn => {
+    container.querySelectorAll('.btn-kick').forEach(btn => {
         btn.onclick = () => kickSuPlayer(btn.dataset.id);
     });
 }
