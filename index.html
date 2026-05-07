@@ -23,13 +23,13 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-HNjiY6Tt.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-WwgpZKcu.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CwaZ9BiI.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-BoJx7yo_.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CXBqVGRQ.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-UqAkEylO.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-ByB7-Wnm.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-D4xVkCuR.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-BI-Q8_JA.css">
 </head>
 <body>
     <div id="app">
@@ -220,6 +220,7 @@
         <div id="screen-multiplayer-share" class="screen hidden">
             <div class="lobby-card">
                 <header class="lobby-header">
+                    <button class="btn-back multiplayer-return-home"><i data-lucide="arrow-left"></i></button>
                     <h1>SHARE GAME</h1>
                 </header>
                 <div class="share-content">
@@ -245,6 +246,7 @@
         <div id="screen-multiplayer-lobby" class="screen hidden">
             <div class="lobby-card">
                 <header class="lobby-header">
+                    <button class="btn-back multiplayer-return-home"><i data-lucide="arrow-left"></i></button>
                     <h1>LOBBY</h1>
                     <div class="room-code-tag" id="lobby-room-code">CODE: XXXX</div>
                 </header>
@@ -266,6 +268,7 @@
         <div id="screen-multiplayer-waiting" class="screen hidden">
             <div class="lobby-card">
                 <header class="lobby-header">
+                    <button class="btn-back multiplayer-return-home"><i data-lucide="arrow-left"></i></button>
                     <h1 id="waiting-title">JOINED GAME</h1>
                 </header>
                 <div class="waiting-content">
@@ -417,20 +420,20 @@
 
         <!-- #screen-su-setter: Setter's map picker -->
         <div id="screen-su-setter" class="screen hidden">
-            <div class="su-timer" id="su-setter-timer">30</div>
             <div class="setter-instruction" id="su-setter-instruction">Pick a location to stitch up [NAME]</div>
             <div id="setter-map"></div>
+            <div class="su-timer" id="su-setter-timer">30</div>
             <button id="btn-su-setter-confirm" disabled>CONFIRM LOCATION</button>
         </div>
 
         <!-- #screen-su-guesser: Guesser's Street View + guess map -->
         <div id="screen-su-guesser" class="screen hidden">
+            <div class="su-timer" id="su-guesser-timer">120</div>
             <div class="game-header">
                 <div class="round-info">
                     <span id="su-guesser-round-num">ROUND 1 / 5</span>
                     <small id="su-guesser-setter-name">Setter chose this for you</small>
                 </div>
-                <div class="su-timer" id="su-guesser-timer">120</div>
             </div>
             <div id="su-street-view-container" class="street-view-full"></div>
             
@@ -442,12 +445,12 @@
 
         <!-- #screen-su-spectator: Spectator readonly view -->
         <div id="screen-su-spectator" class="screen hidden">
+            <div class="su-timer" id="su-spectator-timer">120</div>
             <div class="game-header">
                 <div class="round-info">
                     <span id="su-spectator-round-num">ROUND 1 / 5</span>
                     <small id="su-spectator-label">SPECTATING — [NAME] is guessing</small>
                 </div>
-                <div class="su-timer" id="su-spectator-timer">120</div>
             </div>
             <div id="su-spectator-sv-container" class="street-view-full"></div>
             <div class="spectator-panel">
