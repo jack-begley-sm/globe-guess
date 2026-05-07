@@ -41,7 +41,7 @@ export function initVsSetup() {
         });
     }
 
-    const startBtn = document.getElementById('btn-start-game');
+    const startBtn = document.getElementById('btn-start-multiplayer');
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             if (vsState.players.length < 2) {

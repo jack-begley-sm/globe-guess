@@ -20,7 +20,7 @@ import { startGame } from './round.js';
 import { getUser, setUser } from './user.js';
 
 export function initLobby() {
-    const startBtn = document.getElementById('btn-start-game');
+    const startBtn = document.getElementById('btn-start-classic');
     if (!startBtn) return;
 
     // Load name from storage
