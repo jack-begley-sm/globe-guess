@@ -15,6 +15,19 @@ export function initSpectatorView(panoId, correctLatLng, guesserName) {
     document.getElementById('su-spectator-round-num').textContent = `ROUND ${suState.currentRound} / ${suState.totalRounds}`;
     document.getElementById('su-spectator-label').textContent = `SPECTATING — ${guesserName} is guessing`;
     
+    const refreshBtn = document.getElementById('btn-su-spectator-refresh');
+    if (refreshBtn) {
+        refreshBtn.onclick = () => {
+            console.log('Spectator Street View refresh triggered');
+            setVsStreetView(panoId, 'su-spectator-sv-container');
+            
+            // Visual feedback
+            const icon = refreshBtn.querySelector('i');
+            if (icon) icon.style.animation = 'spin 0.5s ease-in-out';
+            setTimeout(() => { if (icon) icon.style.animation = ''; }, 500);
+        };
+    }
+
     setVsStreetView(panoId, 'su-spectator-sv-container');
     initSpectatorMap(correctLatLng);
     startSpectatorTimer(120);
@@ -41,7 +54,7 @@ function initSpectatorMap(correctLatLng) {
 
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px;">ANSWER</span>`,
+        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px;">ANSWER</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });
@@ -58,7 +71,7 @@ export function updateLiveGuesserPin(latLng) {
     } else {
         const ivoryIcon = L.divIcon({
             className: 'su-pin-label',
-            html: `<div style="background-color: #fffff0; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--bg-1);"></div><span style="font-size: 8px; margin-left: 12px;">GUESS</span>`,
+            html: `<div style="background-color: #fffff0; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--color-bg);"></div><span style="font-size: 8px; margin-left: 12px;">GUESS</span>`,
             iconSize: [80, 20],
             iconAnchor: [5, 5]
         });

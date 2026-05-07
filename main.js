@@ -47,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const classicBtn = document.getElementById('btn-mode-classic');
     const vsBtn = document.getElementById('btn-mode-vs');
     const suBtn = document.getElementById('btn-mode-su');
+    const joinBtn = document.getElementById('btn-show-join');
 
     if (classicBtn) {
         classicBtn.addEventListener('click', () => {
@@ -69,6 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (joinBtn) {
+        joinBtn.addEventListener('click', () => {
+            landingScreen.classList.add('hidden');
+            document.getElementById('screen-join-game').classList.remove('hidden');
+        });
+    }
+
     const backBtn = document.getElementById('btn-lobby-back');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
@@ -77,19 +85,72 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const joinBackBtn = document.getElementById('btn-join-back');
+    if (joinBackBtn) {
+        joinBackBtn.addEventListener('click', () => {
+            document.getElementById('screen-join-game').classList.add('hidden');
+            landingScreen.classList.remove('hidden');
+        });
+    }
+
+    // Handle Join Game Submit
+    const joinSubmitBtn = document.getElementById('btn-join-submit');
+    const joinNameInput = document.getElementById('input-join-name');
+    const joinCodeInput = document.getElementById('input-join-code');
+
+    if (joinCodeInput) {
+        joinCodeInput.addEventListener('input', () => {
+            joinCodeInput.value = joinCodeInput.value.toUpperCase();
+        });
+    }
+
+    if (joinSubmitBtn) {
+        joinSubmitBtn.addEventListener('click', () => {
+            const name = joinNameInput.value.trim();
+            const code = joinCodeInput.value.trim().toUpperCase();
+            
+            if (!name) {
+                document.getElementById('error-join-name').classList.remove('hidden');
+                joinNameInput.focus();
+                return;
+            }
+            document.getElementById('error-join-name').classList.add('hidden');
+            
+            if (!code || code.length < 4) {
+                document.getElementById('error-join-code').classList.remove('hidden');
+                joinCodeInput.focus();
+                return;
+            }
+            document.getElementById('error-join-code').classList.add('hidden');
+            
+            // Redirect with join code and name
+            const baseUrl = window.location.origin + window.location.pathname;
+            window.location.href = `${baseUrl}?join=${code}&name=${encodeURIComponent(name)}`;
+        });
+    }
+
     // Use query parameters instead of path — works on GitHub Pages
     const params = new URLSearchParams(window.location.search);
-    const vsCode = params.get('join');
+    const vsCode = params.get('join') || params.get('join-vs');
     const suCode = params.get('join-su');
+    const playerName = params.get('name');
 
     if (vsCode) {
         vsState.roomCode = vsCode;
-        document.getElementById('modal-vs-join').classList.remove('hidden');
+        if (playerName) {
+            joinGame(vsCode, playerName);
+        } else {
+            document.getElementById('modal-vs-join').classList.remove('hidden');
+        }
     }
 
     if (suCode) {
         suState.roomCode = suCode;
-        document.getElementById('modal-su-join').classList.remove('hidden');
+        if (playerName) {
+            joinSuGame(suCode, playerName);
+        } else {
+            document.getElementById('modal-su-join').classList.remove('hidden');
+        }
     }
 
     document.getElementById('btn-vs-join-game').addEventListener('click', () => {

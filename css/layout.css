@@ -104,6 +104,12 @@
     color: var(--color-teal);
 }
 
+.btn-mode.btn-join {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+    margin-top: 8px;
+}
+
 .btn-mode.disabled {
     opacity: 0.5;
     cursor: not-allowed;

@@ -21,6 +21,19 @@ export function initGuesserPhase(panoId, setterName, autoPlaced) {
     const submitBtn = document.getElementById('btn-su-submit-guess');
     submitBtn.disabled = true;
 
+    const refreshBtn = document.getElementById('btn-su-guesser-refresh');
+    if (refreshBtn) {
+        refreshBtn.onclick = () => {
+            console.log('Manual Street View refresh triggered');
+            setVsStreetView(panoId, 'su-street-view-container');
+            
+            // Visual feedback
+            const icon = refreshBtn.querySelector('i');
+            if (icon) icon.style.animation = 'spin 0.5s ease-in-out';
+            setTimeout(() => { if (icon) icon.style.animation = ''; }, 500);
+        };
+    }
+
     setVsStreetView(panoId, 'su-street-view-container');
     initGuessMap();
     startGuesserTimer(120);
@@ -61,7 +74,7 @@ function placeGuessPin(lat, lng) {
     } else {
         const ivoryIcon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div style="background-color: #fffff0; width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--bg-1);"></div>`,
+            html: `<div style="background-color: #fffff0; width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--color-bg);"></div>`,
             iconSize: [15, 15],
             iconAnchor: [7, 7]
         });

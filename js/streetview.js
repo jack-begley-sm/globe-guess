@@ -22,7 +22,7 @@ import { state } from './state.js';
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 let svService;
-let panorama;
+let panoramas = {}; // map of containerId -> StreetViewPanorama
 let isLibraryLoaded = false;
 
 // ─────────────────────────────────────────────────────────────
@@ -125,7 +125,12 @@ export function setVsStreetView(pano, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const sv = new google.maps.StreetViewPanorama(container, {
+    if (!isLibraryLoaded) {
+        loadGoogleMaps(() => setVsStreetView(pano, containerId));
+        return;
+    }
+
+    const options = {
         addressControl: false,
         showRoadLabels: false,
         zoomControl: false,
@@ -135,9 +140,17 @@ export function setVsStreetView(pano, containerId) {
         motionTracking: false,
         motionTrackingControl: false,
         linksControl: true,
-        clickToGo: true
-    });
-    sv.setPano(pano);
+        clickToGo: true,
+        pano: pano
+    };
+
+    if (panoramas[containerId]) {
+        const sv = panoramas[containerId];
+        sv.setOptions(options);
+        sv.setPano(pano);
+    } else {
+        panoramas[containerId] = new google.maps.StreetViewPanorama(container, options);
+    }
 }
 
 // Returns coords only — no pano ID to avoid stale IDs between rounds
@@ -206,6 +219,24 @@ function findValidCoords(region, attempt, resolve, reject) {
     }, reject);
 }
 
+export function isGoogleCarImagery(data) {
+    if (!data || !data.tiles || !data.location) return false;
+    
+    // Check for standard Google Car dimensions
+    const isStandardRes = (
+        data.tiles.worldSize?.width >= 16384 &&
+        data.tiles.worldSize?.height >= 8192
+    );
+    
+    // Check for official copyright
+    const isOfficial = data.copyright && data.copyright.includes('Google');
+    
+    // Official car imagery almost always has links to next/prev panos
+    const hasLinks = data.links && data.links.length >= 2;
+
+    return (isStandardRes || isOfficial) && hasLinks;
+}
+
 function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
     const radii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
 
@@ -225,13 +256,7 @@ function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
             return;
         }
 
-        const isGoogleCar = (
-            data.tiles?.worldSize?.width === 16384 &&
-            data.tiles?.worldSize?.height === 8192 &&
-            data.links?.length >= 2
-        );
-
-        if (isGoogleCar) {
+        if (isGoogleCarImagery(data)) {
             resolve(data);
         } else {
             findNearestOutdoor(latLng, resolve, reject, attempt + 1);
@@ -250,13 +275,7 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         return;
     }
 
-    // Clear listeners from previous panorama but don't wipe the DOM
-    if (panorama) {
-        google.maps.event.clearInstanceListeners(panorama);
-        panorama = null;
-    }
-
-    panorama = new google.maps.StreetViewPanorama(container, {
+    const options = {
         addressControl: false,
         showRoadLabels: false,
         zoomControl: false,
@@ -268,14 +287,25 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         linksControl: true,
         clickToGo: true,
         pano: data.location.pano
-    });
+    };
+
+    let sv;
+    if (panoramas[containerId]) {
+        sv = panoramas[containerId];
+        google.maps.event.clearInstanceListeners(sv);
+        sv.setOptions(options);
+        sv.setPano(data.location.pano);
+    } else {
+        sv = new google.maps.StreetViewPanorama(container, options);
+        panoramas[containerId] = sv;
+    }
 
     let resolved = false;
 
     const checkPanorama = () => {
         if (resolved) return;
         resolved = true;
-        const links = panorama.getLinks();
+        const links = sv.getLinks();
         if (links && links.length >= 2) {
             resolve();
         } else {
@@ -284,7 +314,7 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         }
     };
 
-    google.maps.event.addListenerOnce(panorama, 'pano_changed', () => {
+    google.maps.event.addListenerOnce(sv, 'pano_changed', () => {
         setTimeout(checkPanorama, 500);
     });
 

@@ -5,6 +5,7 @@
 
 import { suState } from './su-state.js';
 import { sendSuData } from './su-guest.js';
+import { isGoogleCarImagery } from './streetview.js';
 
 let setterMap = null;
 let setterMarker = null;
@@ -61,7 +62,7 @@ async function placeSetterPin(lat, lng) {
     } else {
         const tealIcon = L.divIcon({
             className: 'custom-div-icon',
-            html: `<div style="background-color: var(--teal); width: 15px; height: 15px; border-radius: 50%; border: 2px solid white;"></div>`,
+            html: `<div style="background-color: var(--color-teal); width: 15px; height: 15px; border-radius: 50%; border: 2px solid white;"></div>`,
             iconSize: [15, 15],
             iconAnchor: [7, 7]
         });
@@ -82,7 +83,11 @@ async function placeSetterPin(lat, lng) {
                 source: google.maps.StreetViewSource.OUTDOOR
             }, (data, status) => {
                 if (status === google.maps.StreetViewStatus.OK) {
-                    resolve(data);
+                    if (isGoogleCarImagery(data)) {
+                        resolve(data);
+                    } else {
+                        reject(new Error('Not official Google imagery'));
+                    }
                 } else {
                     reject(new Error('No Street View found here'));
                 }

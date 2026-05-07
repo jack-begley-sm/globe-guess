@@ -73,13 +73,13 @@ function initRevealMap(result) {
 
     const goldIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--gold); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--gold);">ANSWER</span>`,
+        html: `<div style="background-color: var(--color-gold); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--color-gold);">ANSWER</span>`,
         iconSize: [80, 20],
         iconAnchor: [6, 6]
     });
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--teal); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--teal);">GUESS</span>`,
+        html: `<div style="background-color: var(--color-teal); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--color-teal);">GUESS</span>`,
         iconSize: [80, 20],
         iconAnchor: [6, 6]
     });
@@ -91,7 +91,7 @@ function initRevealMap(result) {
         const polyline = L.polyline([
             [result.correctLatLng.lat, result.correctLatLng.lng],
             [result.guessLatLng.lat, result.guessLatLng.lng]
-        ], { color: 'var(--teal)', weight: 2, dashArray: '5, 10' }).addTo(revealMap);
+        ], { color: 'var(--color-teal)', weight: 2, dashArray: '5, 10' }).addTo(revealMap);
 
         const mid = L.latLng(
             (result.correctLatLng.lat + result.guessLatLng.lat) / 2,
@@ -158,7 +158,7 @@ function renderSuLeaderboard() {
         row.style.animationDelay = `${index * 100}ms`;
         
         let medal = '';
-        if (index === 0) medal = '<i data-lucide="medal" style="color: var(--gold); width: 16px;"></i>';
+        if (index === 0) medal = '<i data-lucide="medal" style="color: var(--color-gold); width: 16px;"></i>';
         else if (index === 1) medal = '<i data-lucide="medal" style="color: silver; width: 16px;"></i>';
         else if (index === 2) medal = '<i data-lucide="medal" style="color: #cd7f32; width: 16px;"></i>';
 
@@ -225,13 +225,13 @@ export function openSuRoundModal(index) {
 
     const goldIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--gold); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--gold);">ANSWER</span>`,
+        html: `<div style="background-color: var(--color-gold); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-gold);">ANSWER</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--teal);">${guesser?.name}</span>`,
+        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-teal);">${guesser?.name}</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });
@@ -241,7 +241,7 @@ export function openSuRoundModal(index) {
     const bounds = [ansMarker.getLatLng()];
     if (result.guessLatLng) {
         const guessMarker = L.marker([result.guessLatLng.lat, result.guessLatLng.lng], { icon: tealIcon }).addTo(map);
-        L.polyline([ansMarker.getLatLng(), guessMarker.getLatLng()], { color: 'var(--teal)', weight: 2, dashArray: '5, 10' }).addTo(map);
+        L.polyline([ansMarker.getLatLng(), guessMarker.getLatLng()], { color: 'var(--color-teal)', weight: 2, dashArray: '5, 10' }).addTo(map);
         bounds.push(guessMarker.getLatLng());
     }
 
