@@ -74,17 +74,58 @@ function handleDisconnect(peerId) {
         renderSuPlayerList(suState.players);
         broadcastSuEvent('playersUpdate', { players: suState.players });
         
+        const connectedCount = suState.players.filter(p => p.connected).length;
+
         // Handle in-game disconnects
-        if (suState.currentSetter && suState.currentSetter.peerId === peerId) {
-            autoPlaceLocation(suState.region);
-        } else if (suState.currentGuesser && suState.currentGuesser.peerId === peerId) {
-            handleGuesserSubmit(null, 120000);
+        if (suState.currentRound > 0 && suState.currentRound <= suState.totalRounds) {
+            const isSetter = suState.currentSetter && suState.currentSetter.peerId === peerId;
+            const isGuesser = suState.currentGuesser && suState.currentGuesser.peerId === peerId;
+
+            if (isSetter || isGuesser) {
+                if (connectedCount < 2) {
+                    broadcastSuEvent('gameAborted', { reason: 'Not enough players remaining.' });
+                } else {
+                    // Skip current round
+                    skipCurrentRound(isSetter ? 'Setter' : 'Guesser');
+                }
+            }
         }
     }
     if (connections[peerId]) {
         connections[peerId].close();
         delete connections[peerId];
     }
+}
+
+function skipCurrentRound(whoDropped) {
+    const result = {
+        roundIndex: suState.currentRound,
+        setterId: suState.currentSetter ? suState.currentSetter.peerId : '',
+        guesserId: suState.currentGuesser ? suState.currentGuesser.peerId : '',
+        guessLatLng: null,
+        correctLatLng: suState.confirmedLatLng || { lat: 0, lng: 0 },
+        distance: 0,
+        guesserScore: 0,
+        setterScore: 0,
+        timeTaken: 0,
+        autoPlaced: false,
+        skipped: true,
+        reason: `${whoDropped} disconnected`
+    };
+
+    suState.roundResults.push(result);
+
+    // Sync score arrays
+    if (suState.currentSetter) {
+        const sPlayer = suState.players.find(p => p.peerId === suState.currentSetter.peerId);
+        if (sPlayer) sPlayer.setterScores.push(0);
+    }
+    if (suState.currentGuesser) {
+        const gPlayer = suState.players.find(p => p.peerId === suState.currentGuesser.peerId);
+        if (gPlayer) gPlayer.guesserScores.push(0);
+    }
+
+    broadcastSuEvent('roundReveal', result);
 }
 
 export function kickSuPlayer(peerId) {
@@ -137,24 +178,37 @@ export function nextSuRound() {
 }
 
 function generateTurnOrder(players, roundIndex) {
+    const connectedPlayers = players.filter(p => p.connected);
+    if (connectedPlayers.length < 2) return { setter: players[0], guesser: players[0] };
+
     if (roundIndex < players.length) {
-        // Sequential
-        const setter = players[roundIndex % players.length];
-        const guesser = players[(roundIndex + 1) % players.length];
+        // Sequential but skip disconnected
+        let setterIdx = roundIndex % players.length;
+        while (!players[setterIdx].connected) {
+            setterIdx = (setterIdx + 1) % players.length;
+        }
+        const setter = players[setterIdx];
+
+        let guesserIdx = (setterIdx + 1) % players.length;
+        while (!players[guesserIdx].connected || guesserIdx === setterIdx) {
+            guesserIdx = (guesserIdx + 1) % players.length;
+        }
+        const guesser = players[guesserIdx];
+
         return { setter, guesser };
     } else {
-        // Random with constraints
+        // Random from connected only
         let attempts = 0;
         let setter, guesser;
         const lastPair = suState.turnHistory[suState.turnHistory.length - 1];
 
         while (attempts < 10) {
-            const shuffled = [...players].sort(() => Math.random() - 0.5);
+            const shuffled = [...connectedPlayers].sort(() => Math.random() - 0.5);
             setter = shuffled[0];
             guesser = shuffled[1];
 
             if (setter.peerId !== guesser.peerId && 
-                (setter.peerId !== lastPair[0] || guesser.peerId !== lastPair[1])) {
+                (!lastPair || setter.peerId !== lastPair[0] || guesser.peerId !== lastPair[1])) {
                 break;
             }
             attempts++;

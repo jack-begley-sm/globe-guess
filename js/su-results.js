@@ -24,7 +24,7 @@ export function initRoundReveal(result) {
 
     document.getElementById('su-reveal-guesser-name').textContent = guesser ? guesser.name.toUpperCase() : 'GUESSER';
     document.getElementById('su-reveal-guesser-score').textContent = result.guesserScore;
-    document.getElementById('su-reveal-guesser-details').textContent = `${Math.round(result.distance).toLocaleString()} km`;
+    document.getElementById('su-reveal-guesser-details').textContent = result.skipped ? (result.reason || 'Skipped') : `${Math.round(result.distance).toLocaleString()} km`;
     document.getElementById('su-reveal-guesser-total').textContent = guesser ? guesser.guesserScores.reduce((a,b)=>a+b, 0) + guesser.setterScores.reduce((a,b)=>a+b, 0) : 0;
 
     document.getElementById('su-reveal-setter-name').textContent = setter ? setter.name.toUpperCase() : 'SETTER';

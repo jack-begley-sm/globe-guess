@@ -134,6 +134,7 @@ function confirmLocation(panoId, latLng) {
     document.getElementById('screen-su-setter').classList.add('hidden');
     document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
     document.getElementById('waiting-title').textContent = `Waiting for ${suState.currentGuesser.name} to guess...`;
+    document.getElementById('waiting-subtitle').textContent = '';
 }
 
 async function autoPlaceFallback() {
