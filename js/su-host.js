@@ -60,16 +60,32 @@ function handleGuestData(peerId, data) {
 }
 
 function handleJoin(peerId, payload) {
-    const player = {
-        name: payload.name,
-        peerId: peerId,
-        connected: true,
-        setterScores: [],
-        guesserScores: []
-    };
-    suState.players.push(player);
+    let player = suState.players.find(p => p.peerId === peerId);
+    if (!player) {
+        player = {
+            name: payload.name,
+            peerId: peerId,
+            connected: true,
+            setterScores: [],
+            guesserScores: []
+        };
+        suState.players.push(player);
+    } else {
+        player.name = payload.name;
+        player.connected = true;
+    }
+    
     renderSuPlayerList(suState.players);
-    broadcastSuEvent('playersUpdate', { players: suState.players });
+    broadcastSuEvent('playersUpdate', { 
+        players: suState.players,
+        gameState: {
+            currentRound: suState.currentRound,
+            totalRounds: suState.totalRounds,
+            currentSetter: suState.currentSetter,
+            currentGuesser: suState.currentGuesser,
+            inProgress: suState.currentRound > 0
+        }
+    });
 }
 
 function handleDisconnect(peerId) {
@@ -145,17 +161,20 @@ export function kickSuPlayer(peerId) {
 }
 
 export function broadcastSuEvent(type, payload) {
+    // Clean up stale connections first
+    const activeEntries = Object.entries(connections);
+    for (const [id, conn] of activeEntries) {
+        if (!conn || (conn.open === false && conn.peerConnection && 
+            (conn.peerConnection.signalingState === 'closed' || conn.peerConnection.iceConnectionState === 'closed'))) {
+            delete connections[id];
+        }
+    }
+
     Object.values(connections).forEach(conn => {
         try {
-            if (conn && conn.open) {
-                conn.send({ type, payload });
-            } else if (conn) {
-                // Connection exists but not 'open' yet according to PeerJS. 
-                // PeerJS often queues messages if send is called before open, 
-                // but only if we don't check .open. 
-                // However, to be safe, if we know it's a valid connection we try to send.
-                conn.send({ type, payload });
-            }
+            // PeerJS queues messages sent while 'connecting', but only if we don't check .open
+            // However, to be safe we try to send to all that aren't obviously dead
+            conn.send({ type, payload });
         } catch (e) {
             console.warn(`Failed to send ${type} to ${conn.peer}:`, e);
         }
@@ -170,14 +189,25 @@ function handleSuEventLocal(type, payload) {
 }
 
 export function startStitchUpGame() {
+    if (suState.currentRound > 0) return;
+    
+    // Final check for connected players
+    const connectedPlayers = suState.players.filter(p => p.connected);
+    if (connectedPlayers.length < 2) {
+        console.warn('Attempted to start game with < 2 connected players');
+        return;
+    }
+
     suState.currentRound = 0;
+    suState.turnHistory = [];
+    suState.roundResults = [];
     nextSuRound();
 }
 
 export function nextSuRound() {
     suState.currentRound++;
     if (suState.currentRound > suState.totalRounds) {
-        broadcastSuEvent('gameResults', {});
+        broadcastSuEvent('gameResults', { results: suState.roundResults });
         return;
     }
 
@@ -286,6 +316,8 @@ export async function handleGuesserSubmit(latLng, timeTaken) {
         roundIndex: suState.currentRound,
         setterId: suState.currentSetter.peerId,
         guesserId: suState.currentGuesser.peerId,
+        setterName: suState.currentSetter.name,
+        guesserName: suState.currentGuesser.name,
         guessLatLng: latLng,
         correctLatLng: suState.confirmedLatLng,
         distance,

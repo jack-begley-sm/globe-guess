@@ -42,6 +42,32 @@ export function handleSuEvent(type, payload) {
     switch (type) {
         case 'playersUpdate':
             suState.players = payload.players;
+            
+            // Sync game state if provided (recovery mechanism)
+            if (payload.gameState && payload.gameState.inProgress) {
+                const gs = payload.gameState;
+                if (suState.currentRound !== gs.currentRound || !suState.currentSetter) {
+                    console.warn('Syncing game state from playersUpdate');
+                    suState.currentRound = gs.currentRound;
+                    suState.totalRounds = gs.totalRounds;
+                    suState.currentSetter = gs.currentSetter;
+                    suState.currentGuesser = gs.currentGuesser;
+                    
+                    // Trigger UI transition if we are in the lobby/waiting
+                    const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
+                    const waitingVisible = document.getElementById('screen-multiplayer-waiting') && !document.getElementById('screen-multiplayer-waiting').classList.contains('hidden');
+                    
+                    if (lobbyVisible || (waitingVisible && document.getElementById('waiting-title').textContent === 'JOINED GAME')) {
+                        handleStartRound({
+                            roundIndex: gs.currentRound,
+                            setter: gs.currentSetter,
+                            guesser: gs.currentGuesser,
+                            totalRounds: gs.totalRounds
+                        });
+                    }
+                }
+            }
+
             const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
             const waitingVisible = document.getElementById('screen-multiplayer-waiting') && !document.getElementById('screen-multiplayer-waiting').classList.contains('hidden');
             
@@ -62,6 +88,7 @@ export function handleSuEvent(type, payload) {
             break;
         case 'roundReveal':
             suState.confirmedLatLng = payload.correctLatLng; // Ensure we have it for reveal
+            suState.roundResults.push(payload);
             initRoundReveal(payload);
             break;
         case 'startSetup':
@@ -75,6 +102,9 @@ export function handleSuEvent(type, payload) {
             }
             break;
         case 'gameResults':
+            if (payload && payload.results) {
+                suState.roundResults = payload.results;
+            }
             showSuResults();
             break;
         case 'kicked':

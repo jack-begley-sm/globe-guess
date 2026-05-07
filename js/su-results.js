@@ -22,12 +22,12 @@ export function initRoundReveal(result) {
     const setter = suState.players.find(p => p.peerId === result.setterId);
     const guesser = suState.players.find(p => p.peerId === result.guesserId);
 
-    document.getElementById('su-reveal-guesser-name').textContent = guesser ? guesser.name.toUpperCase() : 'GUESSER';
+    document.getElementById('su-reveal-guesser-name').textContent = (guesser?.name || result.guesserName || 'GUESSER').toUpperCase();
     document.getElementById('su-reveal-guesser-score').textContent = result.guesserScore;
     document.getElementById('su-reveal-guesser-details').textContent = result.skipped ? (result.reason || 'Skipped') : `${Math.round(result.distance).toLocaleString()} km`;
     document.getElementById('su-reveal-guesser-total').textContent = guesser ? guesser.guesserScores.reduce((a,b)=>a+b, 0) + guesser.setterScores.reduce((a,b)=>a+b, 0) : 0;
 
-    document.getElementById('su-reveal-setter-name').textContent = setter ? setter.name.toUpperCase() : 'SETTER';
+    document.getElementById('su-reveal-setter-name').textContent = (setter?.name || result.setterName || 'SETTER').toUpperCase();
     document.getElementById('su-reveal-setter-score').textContent = result.setterScore;
     document.getElementById('su-reveal-setter-details').textContent = result.autoPlaced ? 'Auto-placed (0 bonus)' : 'Inverse score';
     document.getElementById('su-reveal-setter-total').textContent = setter ? setter.setterScores.reduce((a,b)=>a+b, 0) + setter.guesserScores.reduce((a,b)=>a+b, 0) : 0;
@@ -186,13 +186,15 @@ function renderSuRoundSummary() {
     suState.roundResults.forEach((result, index) => {
         const setter = suState.players.find(p => p.peerId === result.setterId);
         const guesser = suState.players.find(p => p.peerId === result.guesserId);
+        const setterName = setter?.name || result.setterName || 'Unknown';
+        const guesserName = guesser?.name || result.guesserName || 'Unknown';
 
         const row = document.createElement('div');
         row.className = 'round-summary-row';
         row.innerHTML = `
             <div class="round-summary-info">
                 <div>ROUND ${result.roundIndex}</div>
-                <div class="round-summary-names">${setter?.name} → ${guesser?.name}</div>
+                <div class="round-summary-names">${setterName} → ${guesserName}</div>
             </div>
             <div style="text-align: right;">
                 <div style="font-family: 'DM Mono', monospace;">${Math.round(result.distance).toLocaleString()} km</div>
@@ -208,6 +210,7 @@ export function openSuRoundModal(index) {
     const result = suState.roundResults[index];
     const setter = suState.players.find(p => p.peerId === result.setterId);
     const guesser = suState.players.find(p => p.peerId === result.guesserId);
+    const guesserName = guesser?.name || result.guesserName || 'Guesser';
 
     const modal = document.getElementById('modal-round-detail');
     modal.classList.remove('hidden');
@@ -231,7 +234,7 @@ export function openSuRoundModal(index) {
     });
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-teal);">${guesser?.name}</span>`,
+        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-teal);">${guesserName}</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });
@@ -325,14 +328,22 @@ function calculateSuAwards() {
     }));
     const allRounderId = totals.sort((a,b) => b.total - a.total)[0].id;
 
+    const getWinnerName = (id) => {
+        const p = getPlayer(id);
+        if (p) return p.name;
+        const res = results.find(r => r.setterId === id || r.guesserId === id);
+        if (res) return (res.setterId === id) ? res.setterName : res.guesserName;
+        return 'N/A';
+    };
+
     return [
-        { title: 'Master Stitcher', icon: '🎯', winner: getPlayer(masterStitcherId)?.name || 'N/A' },
-        { title: 'Escape Artist', icon: '🗺️', winner: getPlayer(escapeArtistId)?.name || 'N/A' },
-        { title: 'Hair Trigger', icon: '⚡', winner: getPlayer(fastSetter?.setterId)?.name || 'N/A' },
-        { title: 'Deep Thinker', icon: '🐢', winner: getPlayer(slowSetter?.setterId)?.name || 'N/A' },
-        { title: 'Lucky Escape', icon: '🎰', winner: getPlayer(luckyEscape?.guesserId)?.name || 'N/A' },
-        { title: 'Ruthless', icon: '💀', winner: getPlayer(ruthlessId)?.name || 'N/A' },
-        { title: 'Too Kind', icon: '🤝', winner: getPlayer(tooKindId)?.name || 'N/A' },
-        { title: 'All-Rounder', icon: '🏆', winner: getPlayer(allRounderId)?.name || 'N/A' }
+        { title: 'Master Stitcher', icon: '🎯', winner: getWinnerName(masterStitcherId) },
+        { title: 'Escape Artist', icon: '🗺️', winner: getWinnerName(escapeArtistId) },
+        { title: 'Hair Trigger', icon: '⚡', winner: getWinnerName(fastSetter?.setterId) },
+        { title: 'Deep Thinker', icon: '🐢', winner: getWinnerName(slowSetter?.setterId) },
+        { title: 'Lucky Escape', icon: '🎰', winner: getWinnerName(luckyEscape?.guesserId) },
+        { title: 'Ruthless', icon: '💀', winner: getWinnerName(ruthlessId) },
+        { title: 'Too Kind', icon: '🤝', winner: getWinnerName(tooKindId) },
+        { title: 'All-Rounder', icon: '🏆', winner: getWinnerName(allRounderId) }
     ];
 }

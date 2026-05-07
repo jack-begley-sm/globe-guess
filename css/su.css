@@ -194,7 +194,7 @@
     padding: 20px;
     transform: translateY(100%);
     transition: transform 0.3s ease-out;
-    z-index: 110;
+    z-index: 1500;
     border-top: 2px solid var(--color-teal);
 }
 
