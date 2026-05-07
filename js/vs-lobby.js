@@ -8,7 +8,7 @@ import { getUser, setUser } from './user.js';
 import { initHost, kickPlayer as hostKickPlayer, broadcastEvent } from './vs-host.js';
 import { startVsRound } from './vs-round.js';
 
-const GITHUB_PAGES_URL = 'https://jackbegley-sm.github.io/globe-guess';
+const GITHUB_PAGES_URL = 'https://jack-begley-sm.github.io/globe-guess';
 
 export function initVsSetup() {
     const setupNextBtn = document.getElementById('btn-vs-setup-next');
@@ -127,11 +127,17 @@ async function handleSetupNext() {
     // Browser dev mode uses local network IP for testing
     let joinURL;
     if (window.Capacitor?.isNativePlatform()) {
-        joinURL = `${GITHUB_PAGES_URL}/?join=${roomCode}`;
+        joinURL = `${GITHUB_PAGES_URL}/?join-vs=${roomCode}`;
     } else {
-        const port = window.location.port || '5173';
         const hostname = window.location.hostname;
-        joinURL = `http://${hostname}:${port}/?join=${roomCode}`;
+        const port = window.location.port || '5173';
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            // localhost is unreachable by guests — use GitHub Pages
+            joinURL = `${GITHUB_PAGES_URL}/?join-vs=${roomCode}`;
+        } else {
+            // Real network IP — guests on same WiFi can reach this
+            joinURL = `http://${hostname}:${port}/?join-vs=${roomCode}`;
+        }
     }
 
     const urlInput = document.getElementById('input-share-url');
@@ -155,7 +161,8 @@ async function handleSetupNext() {
     document.getElementById('btn-copy-link').onclick = () => {
         navigator.clipboard.writeText(urlInput.value);
         const btn = document.getElementById('btn-copy-link');
-        const icon = btn.querySelector('i');
+        const icon = btn.querySelector('i, svg');
+        if (!icon) return;
         const oldIcon = icon.getAttribute('data-lucide');
         icon.setAttribute('data-lucide', 'check');
         if (window.lucide) window.lucide.createIcons();
