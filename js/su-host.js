@@ -146,6 +146,7 @@ function skipCurrentRound(whoDropped) {
         if (gPlayer) gPlayer.guesserScores.push(0);
     }
 
+    broadcastSuEvent('playersUpdate', { players: suState.players });
     broadcastSuEvent('roundReveal', result);
 }
 
@@ -335,5 +336,7 @@ export async function handleGuesserSubmit(latLng, timeTaken) {
     const gPlayer = suState.players.find(p => p.peerId === suState.currentGuesser.peerId);
     if (gPlayer) gPlayer.guesserScores.push(guesserScore);
 
+    // Sync players to ensure guests have latest scores for reveal leaderboard
+    broadcastSuEvent('playersUpdate', { players: suState.players });
     broadcastSuEvent('roundReveal', result);
 }

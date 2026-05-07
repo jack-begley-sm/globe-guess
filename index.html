@@ -488,29 +488,38 @@
         <div id="screen-su-reveal" class="screen hidden">
             <div id="reveal-map"></div>
             <div class="score-panel" id="su-score-panel">
-                <div class="score-row">
-                    <div>
-                        <div class="score-label" id="su-reveal-guesser-name">GUESSER</div>
-                        <div class="score-value" id="su-reveal-guesser-score">0</div>
-                        <small id="su-reveal-guesser-details">0 km</small>
+                <div class="score-panel-content">
+                    <div class="score-row">
+                        <div>
+                            <div class="score-label" id="su-reveal-guesser-name">GUESSER</div>
+                            <div class="score-value" id="su-reveal-guesser-score">0</div>
+                            <small id="su-reveal-guesser-details">0 km</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="score-label">TOTAL</div>
+                            <div class="score-value" id="su-reveal-guesser-total">0</div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div class="score-label">TOTAL</div>
-                        <div class="score-value" id="su-reveal-guesser-total">0</div>
+                    <div class="score-row">
+                        <div>
+                            <div class="score-label" id="su-reveal-setter-name">SETTER</div>
+                            <div class="score-value setter" id="su-reveal-setter-score">0</div>
+                            <small id="su-reveal-setter-details">Inverse score</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="score-label">TOTAL</div>
+                            <div class="score-value setter" id="su-reveal-setter-total">0</div>
+                        </div>
+                    </div>
+
+                    <div id="su-reveal-leaderboard-container" class="reveal-leaderboard-container">
+                        <div class="score-label" style="margin: 15px 0 8px 0; font-size: 0.7rem;">LEADERBOARD</div>
+                        <div id="su-reveal-leaderboard" class="reveal-leaderboard">
+                            <!-- Rows populated via JS -->
+                        </div>
                     </div>
                 </div>
-                <div class="score-row">
-                    <div>
-                        <div class="score-label" id="su-reveal-setter-name">SETTER</div>
-                        <div class="score-value setter" id="su-reveal-setter-score">0</div>
-                        <small id="su-reveal-setter-details">Inverse score</small>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="score-label">TOTAL</div>
-                        <div class="score-value setter" id="su-reveal-setter-total">0</div>
-                    </div>
-                </div>
-                <div class="lobby-footer" style="padding: 10px 0 0 0;">
+                <div class="score-panel-footer">
                     <button id="btn-su-next-round" class="btn-primary">NEXT ROUND</button>
                 </div>
             </div>

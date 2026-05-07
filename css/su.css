@@ -196,10 +196,72 @@
     transition: transform 0.3s ease-out;
     z-index: 1500;
     border-top: 2px solid var(--color-teal);
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+@media (min-width: 769px) {
+    .score-panel {
+        width: 450px;
+        left: 20px;
+        bottom: 20px;
+        border-radius: 12px;
+        border: 2px solid var(--color-teal);
+        transform: translateY(120%);
+    }
+    .score-panel.visible {
+        transform: translateY(0);
+    }
 }
 
 .score-panel.visible {
     transform: translateY(0);
+}
+
+@media (min-width: 769px) {
+    .score-panel.visible {
+        transform: translateY(0);
+    }
+}
+
+.score-panel-content {
+    overflow-y: auto;
+    flex: 1;
+}
+
+.score-panel-footer {
+    padding-top: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+.reveal-leaderboard-container {
+    margin-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.reveal-leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reveal-leaderboard-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+.reveal-leaderboard-name {
+    font-weight: 500;
+}
+
+.reveal-leaderboard-score {
+    font-family: 'DM Mono', monospace;
 }
 
 .score-row {
@@ -320,9 +382,12 @@
     color: white;
     font-family: 'Outfit', sans-serif;
     font-weight: 600;
-    padding: 2px 6px;
+    padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .distance-badge {
@@ -334,6 +399,10 @@
     border-radius: 20px;
     font-size: 0.8rem;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
 }
 
 /* Game Header and Refresh Button */

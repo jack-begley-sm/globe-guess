@@ -22,15 +22,19 @@ export function initRoundReveal(result) {
     const setter = suState.players.find(p => p.peerId === result.setterId);
     const guesser = suState.players.find(p => p.peerId === result.guesserId);
 
-    document.getElementById('su-reveal-guesser-name').textContent = (guesser?.name || result.guesserName || 'GUESSER').toUpperCase();
+    const guesserName = (guesser?.name || result.guesserName || 'GUESSER').toUpperCase();
+    document.getElementById('su-reveal-guesser-name').textContent = guesserName;
     document.getElementById('su-reveal-guesser-score').textContent = result.guesserScore;
     document.getElementById('su-reveal-guesser-details').textContent = result.skipped ? (result.reason || 'Skipped') : `${Math.round(result.distance).toLocaleString()} km`;
     document.getElementById('su-reveal-guesser-total').textContent = guesser ? guesser.guesserScores.reduce((a,b)=>a+b, 0) + guesser.setterScores.reduce((a,b)=>a+b, 0) : 0;
 
-    document.getElementById('su-reveal-setter-name').textContent = (setter?.name || result.setterName || 'SETTER').toUpperCase();
+    const setterName = (setter?.name || result.setterName || 'SETTER').toUpperCase();
+    document.getElementById('su-reveal-setter-name').textContent = setterName;
     document.getElementById('su-reveal-setter-score').textContent = result.setterScore;
     document.getElementById('su-reveal-setter-details').textContent = result.autoPlaced ? 'Auto-placed (0 bonus)' : 'Inverse score';
     document.getElementById('su-reveal-setter-total').textContent = setter ? setter.setterScores.reduce((a,b)=>a+b, 0) + setter.guesserScores.reduce((a,b)=>a+b, 0) : 0;
+
+    renderRevealLeaderboard();
 
     setTimeout(() => scorePanel.classList.add('visible'), 500);
 
@@ -43,7 +47,7 @@ export function initRoundReveal(result) {
             if (result.roundIndex < suState.totalRounds) {
                 nextSuRound();
             } else {
-                broadcastSuEvent('gameResults', {});
+                broadcastSuEvent('gameResults', { results: suState.roundResults });
             }
         };
 
@@ -53,12 +57,35 @@ export function initRoundReveal(result) {
             if (result.roundIndex < suState.totalRounds) {
                 nextSuRound();
             } else {
-                broadcastSuEvent('gameResults', {});
+                broadcastSuEvent('gameResults', { results: suState.roundResults });
             }
         }, 60000);
     } else {
         nextBtn.classList.add('hidden');
     }
+}
+
+function renderRevealLeaderboard() {
+    const list = document.getElementById('su-reveal-leaderboard');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const sorted = [...suState.players].sort((a, b) => {
+        const totalA = a.setterScores.reduce((s,v)=>s+v,0) + a.guesserScores.reduce((s,v)=>s+v,0);
+        const totalB = b.setterScores.reduce((s,v)=>s+v,0) + b.guesserScores.reduce((s,v)=>s+v,0);
+        return totalB - totalA;
+    });
+
+    sorted.forEach(player => {
+        const total = player.setterScores.reduce((s,v)=>s+v,0) + player.guesserScores.reduce((s,v)=>s+v,0);
+        const row = document.createElement('div');
+        row.className = 'reveal-leaderboard-row';
+        row.innerHTML = `
+            <span class="reveal-leaderboard-name">${player.name}</span>
+            <span class="reveal-leaderboard-score">${total.toLocaleString()}</span>
+        `;
+        list.appendChild(row);
+    });
 }
 
 function initRevealMap(result) {
@@ -73,14 +100,15 @@ function initRevealMap(result) {
 
     const goldIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--color-gold); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--color-gold);">ANSWER</span>`,
+        html: `<div style="background-color: var(--color-gold); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; color: var(--color-gold);">ANSWER</span>`,
         iconSize: [80, 20],
         iconAnchor: [6, 6]
     });
+    const guesserName = (suState.players.find(p => p.peerId === result.guesserId)?.name || result.guesserName || 'GUESS').toUpperCase();
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--color-teal); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; margin-left: 14px; color: var(--color-teal);">GUESS</span>`,
-        iconSize: [80, 20],
+        html: `<div style="background-color: var(--color-teal); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;"></div><span style="font-size: 10px; color: var(--color-teal);">${guesserName}</span>`,
+        iconSize: [120, 20],
         iconAnchor: [6, 6]
     });
 
@@ -228,13 +256,13 @@ export function openSuRoundModal(index) {
 
     const goldIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--color-gold); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-gold);">ANSWER</span>`,
+        html: `<div style="background-color: var(--color-gold); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; color: var(--color-gold);">ANSWER</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });
     const tealIcon = L.divIcon({
         className: 'su-pin-label',
-        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; margin-left: 12px; color: var(--color-teal);">${guesserName}</span>`,
+        html: `<div style="background-color: var(--color-teal); width: 10px; height: 10px; border-radius: 50%; border: 1px solid white;"></div><span style="font-size: 8px; color: var(--color-teal);">${guesserName}</span>`,
         iconSize: [80, 20],
         iconAnchor: [5, 5]
     });

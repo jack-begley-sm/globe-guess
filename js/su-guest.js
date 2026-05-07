@@ -88,7 +88,9 @@ export function handleSuEvent(type, payload) {
             break;
         case 'roundReveal':
             suState.confirmedLatLng = payload.correctLatLng; // Ensure we have it for reveal
-            suState.roundResults.push(payload);
+            if (!suState.isHost) {
+                suState.roundResults.push(payload);
+            }
             initRoundReveal(payload);
             break;
         case 'startSetup':
