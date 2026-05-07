@@ -23,13 +23,13 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-BF3xhYLF.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-ChJ4FyBw.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CwaZ9BiI.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-BoJx7yo_.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CStjWdjq.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-CzDDjYwn.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-D7fVHx8p.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CZYPoj49.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-CEkqUY4Z.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-C4BZ0nkG.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-D1TESDAq.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-BfnSunRt.css">
 </head>
 <body>
     <div id="app">
@@ -495,29 +495,38 @@
         <div id="screen-su-reveal" class="screen hidden">
             <div id="reveal-map"></div>
             <div class="score-panel" id="su-score-panel">
-                <div class="score-row">
-                    <div>
-                        <div class="score-label" id="su-reveal-guesser-name">GUESSER</div>
-                        <div class="score-value" id="su-reveal-guesser-score">0</div>
-                        <small id="su-reveal-guesser-details">0 km</small>
+                <div class="score-panel-content">
+                    <div class="score-row">
+                        <div>
+                            <div class="score-label" id="su-reveal-guesser-name">GUESSER</div>
+                            <div class="score-value" id="su-reveal-guesser-score">0</div>
+                            <small id="su-reveal-guesser-details">0 km</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="score-label">TOTAL</div>
+                            <div class="score-value" id="su-reveal-guesser-total">0</div>
+                        </div>
                     </div>
-                    <div style="text-align: right;">
-                        <div class="score-label">TOTAL</div>
-                        <div class="score-value" id="su-reveal-guesser-total">0</div>
+                    <div class="score-row">
+                        <div>
+                            <div class="score-label" id="su-reveal-setter-name">SETTER</div>
+                            <div class="score-value setter" id="su-reveal-setter-score">0</div>
+                            <small id="su-reveal-setter-details">Inverse score</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="score-label">TOTAL</div>
+                            <div class="score-value setter" id="su-reveal-setter-total">0</div>
+                        </div>
+                    </div>
+
+                    <div id="su-reveal-leaderboard-container" class="reveal-leaderboard-container">
+                        <div class="score-label" style="margin: 15px 0 8px 0; font-size: 0.7rem;">LEADERBOARD</div>
+                        <div id="su-reveal-leaderboard" class="reveal-leaderboard">
+                            <!-- Rows populated via JS -->
+                        </div>
                     </div>
                 </div>
-                <div class="score-row">
-                    <div>
-                        <div class="score-label" id="su-reveal-setter-name">SETTER</div>
-                        <div class="score-value setter" id="su-reveal-setter-score">0</div>
-                        <small id="su-reveal-setter-details">Inverse score</small>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="score-label">TOTAL</div>
-                        <div class="score-value setter" id="su-reveal-setter-total">0</div>
-                    </div>
-                </div>
-                <div class="lobby-footer" style="padding: 10px 0 0 0;">
+                <div class="score-panel-footer">
                     <button id="btn-su-next-round" class="btn-primary">NEXT ROUND</button>
                 </div>
             </div>
