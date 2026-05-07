@@ -23,12 +23,12 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-xERc5Vfq.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-C3ZOTNTf.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CZYPoj49.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-CEkqUY4Z.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-C4BZ0nkG.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-baiJ8ALv.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-DhrGDbia.js">
   <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-BfnSunRt.css">
 </head>
 <body>
@@ -70,6 +70,13 @@
                         <label>GAME CODE</label>
                         <input type="text" id="input-join-code" placeholder="Enter 6-character code" maxlength="6" style="text-transform: uppercase;">
                         <div id="error-join-code" class="error-msg hidden">Please enter a valid game code</div>
+                    </section>
+                    <section class="config-section">
+                        <label>GAME MODE</label>
+                        <div class="segmented-control" id="control-join-mode">
+                            <button data-mode="vs" class="active">VS MODE</button>
+                            <button data-mode="su">STITCH UP</button>
+                        </div>
                     </section>
                 </div>
                 <div class="lobby-footer">
