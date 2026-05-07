@@ -127,6 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-su-return-home').addEventListener('click', () => {
         window.location.href = './';
     });
+
+    document.querySelectorAll('.multiplayer-return-home').forEach(btn => {
+        btn.addEventListener('click', () => {
+            window.location.href = './';
+        });
+    });
     
     initLobby();
     initVsSetup();

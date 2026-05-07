@@ -77,6 +77,9 @@ export function handleSuEvent(type, payload) {
         case 'kicked':
             showSuMessage('KICKED', 'You were removed from the game by the host.');
             break;
+        case 'gameAborted':
+            showSuMessage('GAME OVER', payload.reason || 'The game was ended because there were not enough players left.');
+            break;
     }
 }
 
@@ -110,6 +113,7 @@ function handleGuesserPhase(data) {
     } else if (suState.localPlayer.peerId === suState.currentSetter.peerId) {
         document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
         document.getElementById('waiting-title').textContent = `Waiting for ${suState.currentGuesser.name} to guess...`;
+        document.getElementById('waiting-subtitle').textContent = '';
     } else {
         // Spectator
         initSpectatorView(data.panoId, data.latLng, suState.currentGuesser.name);
