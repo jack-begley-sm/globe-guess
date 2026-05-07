@@ -83,6 +83,7 @@ function handleJoin(peerId, payload) {
             totalRounds: suState.totalRounds,
             currentSetter: suState.currentSetter,
             currentGuesser: suState.currentGuesser,
+            region: suState.region,
             inProgress: suState.currentRound > 0
         }
     });
@@ -221,7 +222,8 @@ export function nextSuRound() {
         roundIndex: suState.currentRound,
         setter,
         guesser,
-        totalRounds: suState.totalRounds
+        totalRounds: suState.totalRounds,
+        region: suState.region
     });
 }
 
@@ -279,7 +281,8 @@ export function handleSetterConfirm(panoId, latLng, autoPlaced = false) {
         roundIndex: suState.currentRound,
         setter: suState.currentSetter,
         guesser: suState.currentGuesser,
-        totalRounds: suState.totalRounds
+        totalRounds: suState.totalRounds,
+        region: suState.region
     });
 }
 

@@ -52,17 +52,19 @@ export function handleSuEvent(type, payload) {
                     suState.totalRounds = gs.totalRounds;
                     suState.currentSetter = gs.currentSetter;
                     suState.currentGuesser = gs.currentGuesser;
+                    if (gs.region) suState.region = gs.region;
                     
                     // Trigger UI transition if we are in the lobby/waiting
                     const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
                     const waitingVisible = document.getElementById('screen-multiplayer-waiting') && !document.getElementById('screen-multiplayer-waiting').classList.contains('hidden');
                     
-                    if (lobbyVisible || (waitingVisible && document.getElementById('waiting-title').textContent === 'JOINED GAME')) {
+                    if (lobbyVisible || waitingVisible) {
                         handleStartRound({
                             roundIndex: gs.currentRound,
                             setter: gs.currentSetter,
                             guesser: gs.currentGuesser,
-                            totalRounds: gs.totalRounds
+                            totalRounds: gs.totalRounds,
+                            region: gs.region
                         });
                     }
                 }
@@ -95,6 +97,17 @@ export function handleSuEvent(type, payload) {
             break;
         case 'startSetup':
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            
+            // Reset local state for new game
+            suState.currentRound = 0;
+            suState.roundResults = [];
+            suState.currentSetter = null;
+            suState.currentGuesser = null;
+            suState.players.forEach(p => {
+                p.setterScores = [];
+                p.guesserScores = [];
+            });
+
             if (suState.isHost) {
                 document.getElementById('screen-su-setup').classList.remove('hidden');
             } else {
@@ -123,6 +136,7 @@ function handleStartRound(data) {
     suState.currentSetter = data.setter;
     suState.currentGuesser = data.guesser;
     suState.totalRounds = data.totalRounds;
+    if (data.region) suState.region = data.region;
 
     // Hide all game screens
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -148,6 +162,7 @@ function handleGuesserPhase(data) {
         suState.currentSetter = data.setter;
         suState.currentGuesser = data.guesser;
         suState.totalRounds = data.totalRounds;
+        if (data.region) suState.region = data.region;
     }
 
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
