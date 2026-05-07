@@ -39,7 +39,7 @@ export function initSuSetup() {
         });
     }
 
-    const startBtn = document.getElementById('btn-start-game');
+    const startBtn = document.getElementById('btn-start-multiplayer');
     if (startBtn) {
         startBtn.addEventListener('click', () => {
             if (suState.players.length < 2) {
