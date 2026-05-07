@@ -27,6 +27,12 @@ import { initSuSetup } from './js/su-lobby.js';
 import { joinSuGame } from './js/su-guest.js';
 import { preloadGoogleMaps } from './js/streetview.js';
 
+import './css/base.css';
+import './css/layout.css';
+import './css/components.css';
+import './css/vs.css';
+import './css/su.css';
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Globe Guess Initializing...');
     
