@@ -76,8 +76,13 @@ function handleJoin(peerId, payload) {
     }
     
     renderSuPlayerList(suState.players);
+    broadcastPlayers();
+}
+
+function broadcastPlayers() {
     broadcastSuEvent('playersUpdate', { 
         players: suState.players,
+        gameMode: 'su',
         gameState: {
             currentRound: suState.currentRound,
             totalRounds: suState.totalRounds,
@@ -94,7 +99,7 @@ function handleDisconnect(peerId) {
     if (player) {
         player.connected = false;
         renderSuPlayerList(suState.players);
-        broadcastSuEvent('playersUpdate', { players: suState.players });
+        broadcastPlayers();
         
         const connectedCount = suState.players.filter(p => p.connected).length;
 
@@ -147,7 +152,7 @@ function skipCurrentRound(whoDropped) {
         if (gPlayer) gPlayer.guesserScores.push(0);
     }
 
-    broadcastSuEvent('playersUpdate', { players: suState.players });
+    broadcastPlayers();
     broadcastSuEvent('roundReveal', result);
 }
 
@@ -159,7 +164,7 @@ export function kickSuPlayer(peerId) {
     }
     suState.players = suState.players.filter(p => p.peerId !== peerId);
     renderSuPlayerList(suState.players);
-    broadcastSuEvent('playersUpdate', { players: suState.players });
+    broadcastPlayers();
 }
 
 export function broadcastSuEvent(type, payload) {
@@ -340,6 +345,6 @@ export async function handleGuesserSubmit(latLng, timeTaken) {
     if (gPlayer) gPlayer.guesserScores.push(guesserScore);
 
     // Sync players to ensure guests have latest scores for reveal leaderboard
-    broadcastSuEvent('playersUpdate', { players: suState.players });
+    broadcastPlayers();
     broadcastSuEvent('roundReveal', result);
 }

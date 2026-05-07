@@ -43,12 +43,12 @@ export function handleSuEvent(type, payload) {
         case 'playersUpdate':
             suState.players = payload.players;
             
-            // Safety net: if we receive VS-style payload (no gameState) while in SU guest mode,
+            // Safety net: if we receive VS-style payload while in SU guest mode,
             // it means we connected to a VS host. Auto-switch.
-            if (!payload.gameState && !suState.isHost) {
+            if ((payload.gameMode === 'vs' || (!payload.gameMode && !payload.gameState)) && !suState.isHost) {
                 console.warn('Connected to VS host while in SU mode. Switching...');
                 const baseUrl = window.location.origin + window.location.pathname;
-                window.location.href = `${baseUrl}?join-vs=${suState.roomCode}&name=${encodeURIComponent(suState.localPlayer.name)}`;
+                window.location.href = `${baseUrl}?join=${suState.roomCode}&name=${encodeURIComponent(suState.localPlayer.name)}`;
                 return;
             }
 

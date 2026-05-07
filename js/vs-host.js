@@ -88,7 +88,14 @@ function handleJoin(peerId, payload) {
     renderPlayerList();
     
     // Broadcast updated player list to all
-    broadcastEvent('playersUpdate', { players: vsState.players });
+    broadcastPlayers();
+}
+
+function broadcastPlayers() {
+    broadcastEvent('playersUpdate', { 
+        players: vsState.players,
+        gameMode: 'vs'
+    });
 }
 
 function handleDisconnect(peerId) {
@@ -96,7 +103,7 @@ function handleDisconnect(peerId) {
     if (player) {
         player.connected = false;
         renderPlayerList();
-        broadcastEvent('playersUpdate', { players: vsState.players });
+        broadcastPlayers();
     }
     if (connections[peerId]) {
         connections[peerId].close();
@@ -112,7 +119,7 @@ export function kickPlayer(peerId) {
     }
     vsState.players = vsState.players.filter(p => p.peerId !== peerId);
     renderPlayerList();
-    broadcastEvent('playersUpdate', { players: vsState.players });
+    broadcastPlayers();
 }
 
 export function broadcastEvent(type, payload) {

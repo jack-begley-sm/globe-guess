@@ -67,7 +67,7 @@ function handleEvent(type, payload) {
 
         // Safety net: if we receive SU-style payload while in VS guest mode, 
         // it means we connected to a Stitch Up host. Auto-switch.
-        if (payload.gameState) {
+        if (payload.gameMode === 'su' || payload.gameState) {
             console.warn('Connected to SU host while in VS mode. Switching...');
             const baseUrl = window.location.origin + window.location.pathname;
             window.location.href = `${baseUrl}?join-su=${vsState.roomCode}&name=${encodeURIComponent(vsState.localPlayer.name)}`;
