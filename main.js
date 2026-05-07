@@ -93,6 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Mode selector for Join Screen
+    const joinModeContainer = document.getElementById('control-join-mode');
+    if (joinModeContainer) {
+        joinModeContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            joinModeContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    }
+
     // Handle Join Game Submit
     const joinSubmitBtn = document.getElementById('btn-join-submit');
     const joinNameInput = document.getElementById('input-join-name');
@@ -125,7 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Redirect with join code and name
             const baseUrl = window.location.origin + window.location.pathname;
-            window.location.href = `${baseUrl}?join=${code}&name=${encodeURIComponent(name)}`;
+            const modeBtn = document.querySelector('#control-join-mode button.active');
+            const mode = modeBtn ? modeBtn.dataset.mode : 'vs';
+            const param = mode === 'su' ? 'join-su' : 'join';
+            
+            window.location.href = `${baseUrl}?${param}=${code}&name=${encodeURIComponent(name)}`;
         });
     }
 
