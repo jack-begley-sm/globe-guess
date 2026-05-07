@@ -19,8 +19,13 @@ export function initSuHost(roomCode) {
     peer.on('open', (id) => console.log('SU Host Peer ID:', id));
 
     peer.on('connection', (conn) => {
+        // Important: Add to connections immediately so we don't miss early broadcasts
+        connections[conn.peer] = conn;
+        
         conn.on('data', (data) => handleGuestData(conn.peer, data));
         conn.on('open', () => {
+            console.log('SU Connection open:', conn.peer);
+            // Re-confirm in connections
             connections[conn.peer] = conn;
         });
         conn.on('close', () => handleDisconnect(conn.peer));
@@ -141,7 +146,19 @@ export function kickSuPlayer(peerId) {
 
 export function broadcastSuEvent(type, payload) {
     Object.values(connections).forEach(conn => {
-        if (conn.open) conn.send({ type, payload });
+        try {
+            if (conn && conn.open) {
+                conn.send({ type, payload });
+            } else if (conn) {
+                // Connection exists but not 'open' yet according to PeerJS. 
+                // PeerJS often queues messages if send is called before open, 
+                // but only if we don't check .open. 
+                // However, to be safe, if we know it's a valid connection we try to send.
+                conn.send({ type, payload });
+            }
+        } catch (e) {
+            console.warn(`Failed to send ${type} to ${conn.peer}:`, e);
+        }
     });
     // Local handle for host
     handleSuEventLocal(type, payload);
@@ -226,7 +243,12 @@ export function handleSetterConfirm(panoId, latLng, autoPlaced = false) {
         panoId,
         latLng,
         setterName: suState.currentSetter.name,
-        autoPlaced
+        autoPlaced,
+        // Include round state for recovery
+        roundIndex: suState.currentRound,
+        setter: suState.currentSetter,
+        guesser: suState.currentGuesser,
+        totalRounds: suState.totalRounds
     });
 }
 

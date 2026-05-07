@@ -42,7 +42,10 @@ export function handleSuEvent(type, payload) {
     switch (type) {
         case 'playersUpdate':
             suState.players = payload.players;
-            if (document.getElementById('screen-multiplayer-lobby').classList.contains('hidden') === false) {
+            const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
+            const waitingVisible = document.getElementById('screen-multiplayer-waiting') && !document.getElementById('screen-multiplayer-waiting').classList.contains('hidden');
+            
+            if (lobbyVisible || waitingVisible) {
                 renderSuPlayerList(suState.players);
             }
             break;
@@ -102,21 +105,30 @@ function handleStartRound(data) {
 }
 
 function handleGuesserPhase(data) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-
     suState.confirmedLatLng = data.latLng;
     suState.confirmedPanoId = data.panoId;
     suState.autoPlaced = data.autoPlaced;
 
-    if (suState.localPlayer.peerId === suState.currentGuesser.peerId) {
+    // Recovery check: if we missed startRound, use the data provided in guesserPhase
+    if (!suState.currentGuesser || !suState.currentSetter || suState.currentRound !== data.roundIndex) {
+        console.warn('Syncing round state from guesserPhase payload');
+        suState.currentRound = data.roundIndex;
+        suState.currentSetter = data.setter;
+        suState.currentGuesser = data.guesser;
+        suState.totalRounds = data.totalRounds;
+    }
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+
+    if (suState.currentGuesser && suState.localPlayer.peerId === suState.currentGuesser.peerId) {
         initGuesserPhase(data.panoId, data.setterName, data.autoPlaced);
-    } else if (suState.localPlayer.peerId === suState.currentSetter.peerId) {
+    } else if (suState.currentSetter && suState.localPlayer.peerId === suState.currentSetter.peerId) {
         document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
-        document.getElementById('waiting-title').textContent = `Waiting for ${suState.currentGuesser.name} to guess...`;
+        document.getElementById('waiting-title').textContent = `Waiting for ${suState.currentGuesser ? suState.currentGuesser.name : 'guesser'} to guess...`;
         document.getElementById('waiting-subtitle').textContent = '';
     } else {
         // Spectator
-        initSpectatorView(data.panoId, data.latLng, suState.currentGuesser.name);
+        initSpectatorView(data.panoId, data.latLng, suState.currentGuesser ? suState.currentGuesser.name : 'Guesser');
     }
 }
 
