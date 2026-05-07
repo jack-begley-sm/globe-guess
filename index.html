@@ -23,13 +23,13 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-WwgpZKcu.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-C5JpWUd-.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CwaZ9BiI.js">
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-BoJx7yo_.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CXBqVGRQ.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-D4xVkCuR.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-BI-Q8_JA.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CStjWdjq.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-BZve3wy7.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-D7fVHx8p.css">
 </head>
 <body>
     <div id="app">
@@ -48,6 +48,32 @@
                     <button class="btn-mode disabled" disabled>
                         CO-OP <i data-lucide="lock" class="lock-icon"></i>
                     </button>
+                    <button id="btn-show-join" class="btn-mode btn-join">JOIN GAME</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: JOIN GAME -->
+        <div id="screen-join-game" class="screen hidden">
+            <div class="lobby-card">
+                <header class="lobby-header">
+                    <button id="btn-join-back" class="btn-back"><i data-lucide="arrow-left"></i></button>
+                    <h1>JOIN GAME</h1>
+                </header>
+                <div class="lobby-sections">
+                    <section class="config-section">
+                        <label>YOUR NAME</label>
+                        <input type="text" id="input-join-name" placeholder="Enter your name">
+                        <div id="error-join-name" class="error-msg hidden">Please enter your name</div>
+                    </section>
+                    <section class="config-section">
+                        <label>GAME CODE</label>
+                        <input type="text" id="input-join-code" placeholder="Enter 6-character code" maxlength="6" style="text-transform: uppercase;">
+                        <div id="error-join-code" class="error-msg hidden">Please enter a valid game code</div>
+                    </section>
+                </div>
+                <div class="lobby-footer">
+                    <button id="btn-join-submit" class="btn-start">JOIN</button>
                 </div>
             </div>
         </div>
@@ -434,6 +460,9 @@
                     <span id="su-guesser-round-num">ROUND 1 / 5</span>
                     <small id="su-guesser-setter-name">Setter chose this for you</small>
                 </div>
+                <button class="btn-icon-only btn-su-refresh" id="btn-su-guesser-refresh" title="Reload Street View">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
             </div>
             <div id="su-street-view-container" class="street-view-full"></div>
             
@@ -451,6 +480,9 @@
                     <span id="su-spectator-round-num">ROUND 1 / 5</span>
                     <small id="su-spectator-label">SPECTATING — [NAME] is guessing</small>
                 </div>
+                <button class="btn-icon-only btn-su-refresh" id="btn-su-spectator-refresh" title="Reload Street View">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
             </div>
             <div id="su-spectator-sv-container" class="street-view-full"></div>
             <div class="spectator-panel">
