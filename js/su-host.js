@@ -7,11 +7,17 @@ import { suState } from './su-state.js';
 import { renderSuPlayerList } from './su-lobby.js';
 import { initSetterPhase } from './su-setter.js';
 import { initRoundReveal } from './su-results.js';
+import { saveSession, clearSession } from './user.js';
+import { requestWakeLock, releaseWakeLock } from './awake.js';
 
 let peer = null;
 let connections = {};
+let hostAloneTimer = null;
+let hostAloneSeconds = 60;
 
 export function initSuHost(roomCode) {
+    saveSession({ roomCode, name: suState.localPlayer.name, role: 'host', mode: 'su' });
+    requestWakeLock();
     if (peer) peer.destroy();
     
     peer = new Peer(roomCode);
@@ -60,7 +66,9 @@ function handleGuestData(peerId, data) {
 }
 
 function handleJoin(peerId, payload) {
-    let player = suState.players.find(p => p.peerId === peerId);
+    // Re-association logic: try peerId first, then name
+    let player = suState.players.find(p => p.peerId === peerId || p.name === payload.name);
+    
     if (!player) {
         player = {
             name: payload.name,
@@ -71,12 +79,15 @@ function handleJoin(peerId, payload) {
         };
         suState.players.push(player);
     } else {
+        player.peerId = peerId;
         player.name = payload.name;
         player.connected = true;
     }
     
     renderSuPlayerList(suState.players);
     broadcastPlayers();
+
+    checkHostAlone();
 }
 
 function broadcastPlayers() {
@@ -110,7 +121,8 @@ function handleDisconnect(peerId) {
 
             if (isSetter || isGuesser) {
                 if (connectedCount < 2) {
-                    broadcastSuEvent('gameAborted', { reason: 'Not enough players remaining.' });
+                    // Don't abort immediately, wait for reconnection if host is alone
+                    // broadcastSuEvent('gameAborted', { reason: 'Not enough players remaining.' });
                 } else {
                     // Skip current round
                     skipCurrentRound(isSetter ? 'Setter' : 'Guesser');
@@ -122,6 +134,65 @@ function handleDisconnect(peerId) {
         connections[peerId].close();
         delete connections[peerId];
     }
+
+    checkHostAlone();
+}
+
+function checkHostAlone() {
+    const connectedGuests = suState.players.filter(p => p.connected);
+    if (connectedGuests.length === 0 && suState.currentRound > 0) {
+        showHostAloneModal();
+    } else {
+        hideHostAloneModal();
+    }
+}
+
+function showHostAloneModal() {
+    const modal = document.getElementById('modal-host-alone');
+    if (!modal || !modal.classList.contains('hidden')) return;
+
+    modal.classList.remove('hidden');
+    hostAloneSeconds = 60;
+    updateHostAloneTimer();
+
+    if (hostAloneTimer) clearInterval(hostAloneTimer);
+    hostAloneTimer = setInterval(() => {
+        hostAloneSeconds--;
+        updateHostAloneTimer();
+        if (hostAloneSeconds <= 0) {
+            clearInterval(hostAloneTimer);
+            quitSuGame();
+        }
+    }, 1000);
+
+    document.getElementById('btn-host-alone-quit').onclick = () => {
+        quitSuGame();
+    };
+
+    document.getElementById('btn-host-alone-wait').onclick = () => {
+        hostAloneSeconds = 60;
+        updateHostAloneTimer();
+    };
+}
+
+function hideHostAloneModal() {
+    const modal = document.getElementById('modal-host-alone');
+    if (modal) modal.classList.add('hidden');
+    if (hostAloneTimer) {
+        clearInterval(hostAloneTimer);
+        hostAloneTimer = null;
+    }
+}
+
+function updateHostAloneTimer() {
+    const timerSpan = document.getElementById('host-alone-timer');
+    if (timerSpan) timerSpan.textContent = hostAloneSeconds;
+}
+
+function quitSuGame() {
+    clearSession();
+    releaseWakeLock();
+    window.location.href = './';
 }
 
 function skipCurrentRound(whoDropped) {

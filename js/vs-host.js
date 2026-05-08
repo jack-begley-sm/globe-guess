@@ -22,11 +22,18 @@
 import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
 import { onAllGuessesReceived } from './vs-round.js';
+import { saveSession, clearSession } from './user.js';
+import { requestWakeLock, releaseWakeLock } from './awake.js';
 
 let peer = null;
 let connections = {};
+let hostAloneTimer = null;
+let hostAloneSeconds = 60;
 
 export function initHost(roomCode) {
+    saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs' });
+    requestWakeLock();
+    
     // Reset Peer if already exists
     if (peer) {
         peer.destroy();
@@ -77,18 +84,29 @@ function handleGuestData(peerId, data) {
 }
 
 function handleJoin(peerId, payload) {
-    const player = {
-        name: payload.name,
-        peerId: peerId,
-        connected: true,
-        scores: [],
-        guesses: []
-    };
-    vsState.players.push(player);
+    // Check if player already exists (reconnection)
+    let player = vsState.players.find(p => p.name === payload.name);
+    
+    if (player) {
+        player.peerId = peerId;
+        player.connected = true;
+    } else {
+        player = {
+            name: payload.name,
+            peerId: peerId,
+            connected: true,
+            scores: [],
+            guesses: []
+        };
+        vsState.players.push(player);
+    }
+    
     renderPlayerList();
     
     // Broadcast updated player list to all
     broadcastPlayers();
+
+    checkHostAlone();
 }
 
 function broadcastPlayers() {
@@ -109,6 +127,65 @@ function handleDisconnect(peerId) {
         connections[peerId].close();
         delete connections[peerId];
     }
+
+    checkHostAlone();
+}
+
+function checkHostAlone() {
+    const connectedGuests = vsState.players.filter(p => p.connected);
+    if (connectedGuests.length === 0 && vsState.gameStarted) {
+        showHostAloneModal();
+    } else {
+        hideHostAloneModal();
+    }
+}
+
+function showHostAloneModal() {
+    const modal = document.getElementById('modal-host-alone');
+    if (!modal || !modal.classList.contains('hidden')) return;
+
+    modal.classList.remove('hidden');
+    hostAloneSeconds = 60;
+    updateHostAloneTimer();
+
+    if (hostAloneTimer) clearInterval(hostAloneTimer);
+    hostAloneTimer = setInterval(() => {
+        hostAloneSeconds--;
+        updateHostAloneTimer();
+        if (hostAloneSeconds <= 0) {
+            clearInterval(hostAloneTimer);
+            quitGame();
+        }
+    }, 1000);
+
+    document.getElementById('btn-host-alone-quit').onclick = () => {
+        quitGame();
+    };
+
+    document.getElementById('btn-host-alone-wait').onclick = () => {
+        hostAloneSeconds = 60;
+        updateHostAloneTimer();
+    };
+}
+
+function hideHostAloneModal() {
+    const modal = document.getElementById('modal-host-alone');
+    if (modal) modal.classList.add('hidden');
+    if (hostAloneTimer) {
+        clearInterval(hostAloneTimer);
+        hostAloneTimer = null;
+    }
+}
+
+function updateHostAloneTimer() {
+    const timerSpan = document.getElementById('host-alone-timer');
+    if (timerSpan) timerSpan.textContent = hostAloneSeconds;
+}
+
+function quitGame() {
+    clearSession();
+    releaseWakeLock();
+    window.location.href = './';
 }
 
 export function kickPlayer(peerId) {

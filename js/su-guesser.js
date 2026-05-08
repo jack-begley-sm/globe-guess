@@ -47,6 +47,13 @@ function initGuessMap() {
         guessMap.remove();
     }
 
+    const mapContainer = document.getElementById('su-guess-map-container');
+    const closeBtn = document.getElementById('btn-su-map-close');
+
+    // Reset state
+    mapContainer.classList.remove('expanded');
+    if (closeBtn) closeBtn.classList.add('hidden');
+
     guessMap = L.map('su-guess-map', {
         center: [20, 0],
         zoom: 2,
@@ -63,9 +70,29 @@ function initGuessMap() {
     currentGuess = null;
 
     guessMap.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        placeGuessPin(lat, lng);
+        if (mapContainer.classList.contains('expanded')) {
+            const { lat, lng } = e.latlng;
+            placeGuessPin(lat, lng);
+        } else {
+            // Expand on click
+            mapContainer.classList.add('expanded');
+            if (closeBtn) closeBtn.classList.remove('hidden');
+            setTimeout(() => {
+                guessMap.invalidateSize();
+            }, 300);
+        }
     });
+
+    if (closeBtn) {
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            mapContainer.classList.remove('expanded');
+            closeBtn.classList.add('hidden');
+            setTimeout(() => {
+                guessMap.invalidateSize();
+            }, 300);
+        };
+    }
 }
 
 function placeGuessPin(lat, lng) {

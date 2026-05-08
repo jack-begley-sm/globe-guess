@@ -9,10 +9,12 @@ import { initSetterPhase } from './su-setter.js';
 import { initGuesserPhase } from './su-guesser.js';
 import { initSpectatorView, updateLiveGuesserPin } from './su-spectator.js';
 import { initRoundReveal, showSuResults } from './su-results.js';
+import { saveSession } from './user.js';
 
 let hostConn = null;
 
 export function joinSuGame(roomCode, name) {
+    saveSession({ roomCode, name, role: 'guest', mode: 'su' });
     const peer = new Peer();
     
     peer.on('open', (id) => {

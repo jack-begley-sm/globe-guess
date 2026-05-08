@@ -26,6 +26,9 @@ import { suState } from './js/su-state.js';
 import { initSuSetup } from './js/su-lobby.js';
 import { joinSuGame } from './js/su-guest.js';
 import { preloadGoogleMaps } from './js/streetview.js';
+import { getSession, clearSession } from './js/user.js';
+import { initHost } from './js/vs-host.js';
+import { initSuHost } from './js/su-host.js';
 
 import './css/base.css';
 import './css/layout.css';
@@ -183,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-vs-return-home').addEventListener('click', () => {
+        clearSession();
         window.location.href = './';
     });
 
@@ -201,11 +205,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('btn-su-return-home').addEventListener('click', () => {
+        clearSession();
         window.location.href = './';
     });
 
     document.querySelectorAll('.multiplayer-return-home').forEach(btn => {
         btn.addEventListener('click', () => {
+            clearSession();
             window.location.href = './';
         });
     });
@@ -223,6 +229,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Preload Google Maps API immediately so it's ready when game starts
     preloadGoogleMaps();
+
+    // Check for existing session (reconnection)
+    const session = getSession();
+    if (session && !vsCode && !suCode) {
+        console.log('Found existing session:', session);
+        if (session.role === 'host') {
+            if (session.mode === 'vs') {
+                vsState.localPlayer.name = session.name;
+                initHost(session.roomCode);
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
+            } else if (session.mode === 'su') {
+                suState.localPlayer.name = session.name;
+                initSuHost(session.roomCode);
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
+            }
+        } else {
+            if (session.mode === 'vs') {
+                joinGame(session.roomCode, session.name);
+            } else if (session.mode === 'su') {
+                joinSuGame(session.roomCode, session.name);
+            }
+        }
+    }
 
     console.log('Globe Guess Ready.');
 });

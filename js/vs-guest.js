@@ -7,11 +7,14 @@
 import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
 import { handleVsEvent } from './vs-round.js';
+import { saveSession } from './user.js';
 
 let peer = null;
 let hostConn = null;
 
 export function joinGame(hostPeerId, name) {
+    saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs' });
+
     if (peer) {
         peer.destroy();
     }

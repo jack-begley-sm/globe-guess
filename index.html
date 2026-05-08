@@ -401,6 +401,19 @@
             </div>
         </div>
 
+        <!-- HOST ALONE MODAL -->
+        <div id="modal-host-alone" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <h2>All players have left</h2>
+                <p>Waiting for players to return... <span id="host-alone-timer">60</span>s</p>
+                <div class="modal-actions" style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; align-items: center;">
+                    <button id="btn-host-alone-wait" class="btn-primary" style="max-width: 100%;">CONTINUE WAITING</button>
+                    <button id="btn-host-alone-quit" class="btn-secondary" style="margin-top: 0;">QUIT GAME</button>
+                </div>
+            </div>
+        </div>
+
         <!-- STITCH UP SCREENS -->
 
         <!-- #screen-su-setup: Host config -->
@@ -467,6 +480,9 @@
             <div id="su-street-view-container" class="street-view-full"></div>
             
             <div class="guess-map-container" id="su-guess-map-container">
+                <button id="btn-su-map-close" class="btn-map-close hidden">
+                    <i data-lucide="x"></i>
+                </button>
                 <div id="su-guess-map"></div>
                 <button id="btn-su-submit-guess" class="btn-primary" disabled>SUBMIT GUESS</button>
             </div>
