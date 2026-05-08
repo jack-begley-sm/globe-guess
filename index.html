@@ -23,13 +23,13 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-CnhIPEaP.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-8Z_2vs7H.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CZYPoj49.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-CEkqUY4Z.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-C4BZ0nkG.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-8yE1XT5w.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-BfnSunRt.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-BHGRGuq6.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-EomoDVFi.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-DV6EmBFU.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-B-72LGPK.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-CsSXlq5C.css">
 </head>
 <body>
     <div id="app">
@@ -45,9 +45,7 @@
                     <button id="btn-mode-classic" class="btn-mode active">CLASSIC</button>
                     <button id="btn-mode-vs" class="btn-mode active">VERSUS</button>
                     <button id="btn-mode-su" class="btn-mode active">STITCH UP</button>
-                    <button class="btn-mode disabled" disabled>
-                        CO-OP <i data-lucide="lock" class="lock-icon"></i>
-                    </button>
+                    <button id="btn-mode-coop" class="btn-mode active">CO-OP</button>
                     <button id="btn-show-join" class="btn-mode btn-join">JOIN GAME</button>
                 </div>
             </div>
@@ -76,6 +74,7 @@
                         <div class="segmented-control" id="control-join-mode">
                             <button data-mode="vs" class="active">VS MODE</button>
                             <button data-mode="su">STITCH UP</button>
+                            <button data-mode="coop">CO-OP</button>
                         </div>
                     </section>
                 </div>
@@ -408,6 +407,19 @@
             </div>
         </div>
 
+        <!-- HOST ALONE MODAL -->
+        <div id="modal-host-alone" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <h2>All players have left</h2>
+                <p>Waiting for players to return... <span id="host-alone-timer">60</span>s</p>
+                <div class="modal-actions" style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 20px; align-items: center;">
+                    <button id="btn-host-alone-wait" class="btn-primary" style="max-width: 100%;">CONTINUE WAITING</button>
+                    <button id="btn-host-alone-quit" class="btn-secondary" style="margin-top: 0;">QUIT GAME</button>
+                </div>
+            </div>
+        </div>
+
         <!-- STITCH UP SCREENS -->
 
         <!-- #screen-su-setup: Host config -->
@@ -474,6 +486,9 @@
             <div id="su-street-view-container" class="street-view-full"></div>
             
             <div class="guess-map-container" id="su-guess-map-container">
+                <button id="btn-su-map-close" class="btn-map-close hidden">
+                    <i data-lucide="x"></i>
+                </button>
                 <div id="su-guess-map"></div>
                 <button id="btn-su-submit-guess" class="btn-primary" disabled>SUBMIT GUESS</button>
             </div>
