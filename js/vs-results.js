@@ -47,46 +47,99 @@ export function showVsResults() {
 
 function renderFinalLeaderboard() {
     const container = document.getElementById('vs-final-leaderboard');
-    container.innerHTML = '<h3>LEADERBOARD</h3>';
+    container.innerHTML = '';
 
-    const sortedPlayers = [...vsState.players].sort((a, b) => {
-        const totalA = (a.scores || []).reduce((sum, s) => sum + s, 0);
-        const totalB = (b.scores || []).reduce((sum, s) => sum + s, 0);
-        return totalB - totalA;
-    });
-
-    sortedPlayers.forEach((player, index) => {
-        const totalScore = (player.scores || []).reduce((sum, s) => sum + s, 0);
-        const totalDist = vsState.roundResults.reduce((sum, r) => {
-             const g = r.guesses[player.peerId];
-             return sum + (g ? g.distance : 0);
-        }, 0);
-
-        const row = document.createElement('div');
-        row.className = 'leaderboard-row animate-reveal';
-        row.style.animationDelay = `${index * 300}ms`;
-        
-        if (!player.connected) row.style.opacity = '0.5';
-
-        if (index === 0) row.classList.add('gold');
-        else if (index === 1) row.classList.add('silver');
-        else if (index === 2) row.classList.add('bronze');
-
-        let rankHtml = index + 1;
-        if (index === 0) rankHtml = '<i data-lucide="medal"></i>';
-        else if (index === 1) rankHtml = '<i data-lucide="medal" style="opacity: 0.8"></i>';
-        else if (index === 2) rankHtml = '<i data-lucide="medal" style="opacity: 0.6"></i>';
-
-        row.innerHTML = `
-            <div class="row-rank">${rankHtml}</div>
-            <div class="row-name">${player.name}${player.connected ? '' : ' (Left)'}</div>
-            <div class="row-score">
-                <div>${totalScore.toLocaleString()} pts</div>
-                <div style="font-size: 10px; opacity: 0.7">${Math.round(totalDist).toLocaleString()} km</div>
-            </div>
+    if (vsState.gameMode === 'coop') {
+        const totalScore = (vsState.players[0].scores || []).reduce((sum, s) => sum + s, 0);
+        const teamScoreEl = document.createElement('div');
+        teamScoreEl.className = 'team-total-score-card animate-reveal';
+        teamScoreEl.innerHTML = `
+            <div class="total-score-label">TEAM TOTAL SCORE</div>
+            <div class="total-score" style="font-size: 48px; color: var(--color-gold, #ffd700);">${totalScore.toLocaleString()}</div>
         `;
-        container.appendChild(row);
-    });
+        container.appendChild(teamScoreEl);
+
+        const title = document.createElement('h3');
+        title.textContent = 'MOST VALUABLE PLAYERS';
+        title.style.marginTop = '20px';
+        container.appendChild(title);
+
+        // Calculate who was closest most often
+        const mvpStats = vsState.players.map(p => {
+            const closestCount = vsState.roundResults.filter(r => r.closestPlayerId === p.peerId).length;
+            const totalDist = vsState.roundResults.reduce((sum, r) => {
+                const g = r.guesses[p.peerId];
+                return sum + (g ? g.distance : 0);
+            }, 0);
+            return { ...p, closestCount, totalDist };
+        }).sort((a, b) => {
+            if (b.closestCount !== a.closestCount) return b.closestCount - a.closestCount;
+            return a.totalDist - b.totalDist; // Tie break with total distance
+        });
+
+        mvpStats.forEach((player, index) => {
+            const row = document.createElement('div');
+            row.className = 'leaderboard-row animate-reveal';
+            row.style.animationDelay = `${(index + 1) * 300}ms`;
+            
+            if (index === 0) row.classList.add('gold');
+            
+            let rankHtml = index + 1;
+            if (index === 0) rankHtml = '<i data-lucide="medal"></i>';
+
+            row.innerHTML = `
+                <div class="row-rank">${rankHtml}</div>
+                <div class="row-name">${player.name}${player.connected ? '' : ' (Left)'}</div>
+                <div class="row-score">
+                    <div>${player.closestCount} Best Guess${player.closestCount !== 1 ? 'es' : ''}</div>
+                    <div style="font-size: 10px; opacity: 0.7">${Math.round(player.totalDist).toLocaleString()} km total</div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+
+    } else {
+        container.innerHTML = '<h3>LEADERBOARD</h3>';
+
+        const sortedPlayers = [...vsState.players].sort((a, b) => {
+            const totalA = (a.scores || []).reduce((sum, s) => sum + s, 0);
+            const totalB = (b.scores || []).reduce((sum, s) => sum + s, 0);
+            return totalB - totalA;
+        });
+
+        sortedPlayers.forEach((player, index) => {
+            const totalScore = (player.scores || []).reduce((sum, s) => sum + s, 0);
+            const totalDist = vsState.roundResults.reduce((sum, r) => {
+                const g = r.guesses[player.peerId];
+                return sum + (g ? g.distance : 0);
+            }, 0);
+
+            const row = document.createElement('div');
+            row.className = 'leaderboard-row animate-reveal';
+            row.style.animationDelay = `${index * 300}ms`;
+            
+            if (!player.connected) row.style.opacity = '0.5';
+
+            if (index === 0) row.classList.add('gold');
+            else if (index === 1) row.classList.add('silver');
+            else if (index === 2) row.classList.add('bronze');
+
+            let rankHtml = index + 1;
+            if (index === 0) rankHtml = '<i data-lucide="medal"></i>';
+            else if (index === 1) rankHtml = '<i data-lucide="medal" style="opacity: 0.8"></i>';
+            else if (index === 2) rankHtml = '<i data-lucide="medal" style="opacity: 0.6"></i>';
+
+            row.innerHTML = `
+                <div class="row-rank">${rankHtml}</div>
+                <div class="row-name">${player.name}${player.connected ? '' : ' (Left)'}</div>
+                <div class="row-score">
+                    <div>${totalScore.toLocaleString()} pts</div>
+                    <div style="font-size: 10px; opacity: 0.7">${Math.round(totalDist).toLocaleString()} km</div>
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
 
     if (window.lucide) window.lucide.createIcons();
 }
@@ -215,15 +268,24 @@ function openRoundModal(roundIndex) {
 
         Object.entries(round.guesses).forEach(([peerId, data]) => {
             if (!data.latLng) return;
+            
+            const isClosest = vsState.gameMode === 'coop' && peerId === round.closestPlayerId;
+            const color = isClosest ? 'var(--color-gold, #ffd700)' : 'var(--color-teal)';
+            
             const guessLatLng = [data.latLng.lat, data.latLng.lng];
             const guessMarker = L.marker(guessLatLng, {
                 icon: L.divIcon({
                     className: 'custom-marker',
-                    html: `<div class="marker-pin guess" style="background:var(--color-teal);width:10px;height:10px;border-radius:50%"></div><label style="background:var(--color-teal);color:white;padding:2px 4px;border-radius:4px;font-size:10px;position:absolute;top:-20px;left:-20px;white-space:nowrap">${data.name}</label>`
+                    html: `<div class="marker-pin guess" style="background:${color};width:10px;height:10px;border-radius:50%;${isClosest ? 'box-shadow: 0 0 10px gold;' : ''}"></div><label style="background:${color};color:${isClosest ? 'black' : 'white'};padding:2px 4px;border-radius:4px;font-size:10px;position:absolute;top:-20px;left:-20px;white-space:nowrap;${isClosest ? 'font-weight:bold;' : ''}">${data.name}${isClosest ? ' 🏆' : ''}</label>`
                 })
             }).addTo(detailMap);
             markers.push(guessMarker);
-            L.polyline([guessLatLng, answerLatLng], { color: 'var(--color-teal)', weight: 2, dashArray: '5, 5', opacity: 0.6 }).addTo(detailMap);
+            L.polyline([guessLatLng, answerLatLng], { 
+                color: color, 
+                weight: isClosest ? 3 : 2, 
+                dashArray: isClosest ? null : '5, 5', 
+                opacity: isClosest ? 1 : 0.6 
+            }).addTo(detailMap);
         });
 
         if (markers.length > 0) {

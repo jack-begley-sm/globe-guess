@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const vsSetupScreen = document.getElementById('screen-vs-setup');
     const classicBtn = document.getElementById('btn-mode-classic');
     const vsBtn = document.getElementById('btn-mode-vs');
+    const coopBtn = document.getElementById('btn-mode-coop');
     const suBtn = document.getElementById('btn-mode-su');
     const joinBtn = document.getElementById('btn-show-join');
 
@@ -61,8 +62,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (vsBtn) {
         vsBtn.addEventListener('click', () => {
+            vsState.gameMode = 'vs';
             landingScreen.classList.add('hidden');
             vsSetupScreen.classList.remove('hidden');
+            document.querySelector('#screen-vs-setup h1').textContent = 'VS MODE SETUP';
+        });
+    }
+
+    if (coopBtn) {
+        coopBtn.addEventListener('click', () => {
+            vsState.gameMode = 'coop';
+            landingScreen.classList.add('hidden');
+            vsSetupScreen.classList.remove('hidden');
+            document.querySelector('#screen-vs-setup h1').textContent = 'CO-OP SETUP';
         });
     }
 
@@ -141,7 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const baseUrl = window.location.origin + window.location.pathname;
             const modeBtn = document.querySelector('#control-join-mode button.active');
             const mode = modeBtn ? modeBtn.dataset.mode : 'vs';
-            const param = mode === 'su' ? 'join-su' : 'join';
+            let param = 'join';
+            if (mode === 'su') param = 'join-su';
+            if (mode === 'coop') param = 'join-coop';
             
             window.location.href = `${baseUrl}?${param}=${code}&name=${encodeURIComponent(name)}`;
         });
@@ -150,14 +164,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Use query parameters instead of path — works on GitHub Pages
     const params = new URLSearchParams(window.location.search);
     const vsCode = params.get('join') || params.get('join-vs');
+    const coopCode = params.get('join-coop');
     const suCode = params.get('join-su');
     const playerName = params.get('name');
 
     if (vsCode) {
         vsState.roomCode = vsCode;
+        vsState.gameMode = 'vs';
         if (playerName) {
             joinGame(vsCode, playerName);
         } else {
+            document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Globe Guess game";
+            document.getElementById('modal-vs-join').classList.remove('hidden');
+        }
+    }
+
+    if (coopCode) {
+        vsState.roomCode = coopCode;
+        vsState.gameMode = 'coop';
+        if (playerName) {
+            joinGame(coopCode, playerName);
+        } else {
+            document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Co-op game";
             document.getElementById('modal-vs-join').classList.remove('hidden');
         }
     }
@@ -237,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session.role === 'host') {
             if (session.mode === 'vs') {
                 vsState.localPlayer.name = session.name;
+                vsState.gameMode = session.gameMode || 'vs';
                 initHost(session.roomCode);
                 document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
                 document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
@@ -248,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             if (session.mode === 'vs') {
+                vsState.gameMode = session.gameMode || 'vs';
                 joinGame(session.roomCode, session.name);
             } else if (session.mode === 'su') {
                 joinSuGame(session.roomCode, session.name);

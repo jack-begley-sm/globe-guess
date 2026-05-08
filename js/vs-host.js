@@ -31,7 +31,7 @@ let hostAloneTimer = null;
 let hostAloneSeconds = 60;
 
 export function initHost(roomCode) {
-    saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs' });
+    saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs', gameMode: vsState.gameMode });
     requestWakeLock();
     
     // Reset Peer if already exists
@@ -112,7 +112,7 @@ function handleJoin(peerId, payload) {
 function broadcastPlayers() {
     broadcastEvent('playersUpdate', { 
         players: vsState.players,
-        gameMode: 'vs'
+        gameMode: vsState.gameMode
     });
 }
 

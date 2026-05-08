@@ -13,7 +13,7 @@ let peer = null;
 let hostConn = null;
 
 export function joinGame(hostPeerId, name) {
-    saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs' });
+    saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs', gameMode: vsState.gameMode });
 
     if (peer) {
         peer.destroy();
@@ -66,6 +66,9 @@ function handleEvent(type, payload) {
     
     if (type === 'playersUpdate') {
         vsState.players = payload.players;
+        if (payload.gameMode) {
+            vsState.gameMode = payload.gameMode;
+        }
         renderPlayerList();
 
         // Safety net: if we receive SU-style payload while in VS guest mode, 

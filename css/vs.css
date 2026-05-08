@@ -279,7 +279,28 @@
     animation: spin 2s linear infinite;
 }
 
-/* Animations */
+/* Co-op Specific */
+.team-total-score-card {
+    background: var(--color-bg-3);
+    border: 2px solid var(--color-gold, #ffd700);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 0 20px rgba(210, 170, 80, 0.2);
+}
+
+.team-total-score-card .total-score-label {
+    font-size: 14px;
+    letter-spacing: 2px;
+    opacity: 0.8;
+    margin-bottom: 10px;
+}
+
+.leaderboard-title {
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
 @keyframes fadeInSlideUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }

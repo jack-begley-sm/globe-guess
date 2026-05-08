@@ -126,17 +126,18 @@ async function handleSetupNext() {
     // Packaged app always uses GitHub Pages so guests don't need the app
     // Browser dev mode uses local network IP for testing
     let joinURL;
+    const modeParam = vsState.gameMode === 'coop' ? 'join-coop' : 'join-vs';
     if (window.Capacitor?.isNativePlatform()) {
-        joinURL = `${GITHUB_PAGES_URL}/?join-vs=${roomCode}`;
+        joinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
     } else {
         const hostname = window.location.hostname;
         const port = window.location.port || '5173';
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             // localhost is unreachable by guests — use GitHub Pages
-            joinURL = `${GITHUB_PAGES_URL}/?join-vs=${roomCode}`;
+            joinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
         } else {
             // Real network IP — guests on same WiFi can reach this
-            joinURL = `http://${hostname}:${port}/?join-vs=${roomCode}`;
+            joinURL = `http://${hostname}:${port}/?${modeParam}=${roomCode}`;
         }
     }
 

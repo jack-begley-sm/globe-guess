@@ -299,6 +299,9 @@ export function onAllGuessesReceived() {
         guesses: {}
     };
 
+    let bestDistance = Infinity;
+    let closestPlayerId = null;
+
     vsState.players.forEach(player => {
         const guess = player.guesses[vsState.currentRound - 1] || null;
         const result = calculateScore(
@@ -318,7 +321,22 @@ export function onAllGuessesReceived() {
             distance: result.distanceKm,
             timeTaken: player.lastTimeTaken || 0
         };
+
+        if (guess && result.distanceKm < bestDistance) {
+            bestDistance = result.distanceKm;
+            closestPlayerId = player.peerId;
+        }
     });
+
+    if (vsState.gameMode === 'coop') {
+        // In Co-op, everyone gets the same score for the round (the best one)
+        const bestScore = closestPlayerId ? roundResults.guesses[closestPlayerId].score : 0;
+        vsState.players.forEach(player => {
+            player.scores[vsState.currentRound - 1] = bestScore;
+        });
+        roundResults.closestPlayerId = closestPlayerId;
+        roundResults.bestScore = bestScore;
+    }
 
     vsState.roundResults.push(roundResults);
     
@@ -352,20 +370,23 @@ export function showRoundReveal(results) {
     Object.entries(results.guesses).forEach(([peerId, data]) => {
         if (!data.latLng) return;
         
+        const isClosest = vsState.gameMode === 'coop' && peerId === results.closestPlayerId;
+        const color = isClosest ? 'var(--color-gold, #ffd700)' : 'var(--color-teal)';
+        
         const guessLatLng = [data.latLng.lat, data.latLng.lng];
         const guessMarker = L.marker(guessLatLng, {
             icon: L.divIcon({
                 className: 'custom-marker',
-                html: `<div class="marker-pin guess" style="background:var(--color-teal);width:10px;height:10px;border-radius:50%"></div><label style="background:var(--color-teal);color:white;padding:2px 4px;border-radius:4px;font-size:10px;position:absolute;top:-20px;left:-20px;white-space:nowrap">${data.name}</label>`
+                html: `<div class="marker-pin guess" style="background:${color};width:10px;height:10px;border-radius:50%;${isClosest ? 'box-shadow: 0 0 10px gold;' : ''}"></div><label style="background:${color};color:${isClosest ? 'black' : 'white'};padding:2px 4px;border-radius:4px;font-size:10px;position:absolute;top:-20px;left:-20px;white-space:nowrap;${isClosest ? 'font-weight:bold;' : ''}">${data.name}${isClosest ? ' 🏆' : ''}</label>`
             })
         }).addTo(revealMap);
         markers.push(guessMarker);
 
         L.polyline([guessLatLng, answerLatLng], {
-            color: 'var(--color-teal)',
-            weight: 2,
-            dashArray: '5, 5',
-            opacity: 0.6
+            color: color,
+            weight: isClosest ? 3 : 2,
+            dashArray: isClosest ? null : '5, 5',
+            opacity: isClosest ? 1 : 0.6
         }).addTo(revealMap);
     });
 
@@ -396,33 +417,74 @@ function renderRoundLeaderboard(results) {
     const panel = document.getElementById('vs-round-leaderboard');
     panel.innerHTML = '';
     
-    const sortedPlayers = [...vsState.players].sort((a, b) => {
-        const totalA = (a.scores || []).reduce((sum, s) => sum + s, 0);
-        const totalB = (b.scores || []).reduce((sum, s) => sum + s, 0);
-        return totalB - totalA;
-    });
-
-    sortedPlayers.forEach((player, index) => {
-        const roundData = results.guesses[player.peerId];
-        const roundScore = roundData ? roundData.score : 0;
-        const totalScore = (player.scores || []).reduce((sum, s) => sum + s, 0);
-        
-        const row = document.createElement('div');
-        row.className = 'leaderboard-row';
-        if (index === 0) row.classList.add('gold');
-        else if (index === 1) row.classList.add('silver');
-        else if (index === 2) row.classList.add('bronze');
-        
-        row.innerHTML = `
-            <div class="row-rank">${index + 1}</div>
-            <div class="row-name">${player.name}</div>
-            <div class="row-score">
-                <div style="font-size: 16px">+${roundScore.toLocaleString()}</div>
-                <div style="font-size: 11px; opacity:0.7">${totalScore.toLocaleString()} total</div>
+    if (vsState.gameMode === 'coop') {
+        const title = document.createElement('div');
+        title.className = 'leaderboard-title';
+        title.style.textAlign = 'center';
+        title.style.marginBottom = '10px';
+        title.innerHTML = `
+            <div style="font-size: 12px; opacity: 0.8; text-transform: uppercase;">Team Total Score</div>
+            <div style="font-size: 24px; color: var(--color-gold, #ffd700); font-weight: bold;">
+                ${vsState.players[0].scores.reduce((a, b) => a + b, 0).toLocaleString()}
             </div>
         `;
-        panel.appendChild(row);
-    });
+        panel.appendChild(title);
+
+        // Sort by distance for this round in co-op
+        const playersThisRound = vsState.players.map(p => ({
+            ...p,
+            roundData: results.guesses[p.peerId]
+        })).sort((a, b) => {
+            const distA = a.roundData ? a.roundData.distance : Infinity;
+            const distB = b.roundData ? b.roundData.distance : Infinity;
+            return distA - distB;
+        });
+
+        playersThisRound.forEach((player, index) => {
+            const isClosest = player.peerId === results.closestPlayerId;
+            const row = document.createElement('div');
+            row.className = 'leaderboard-row';
+            if (isClosest) row.classList.add('gold');
+            
+            row.innerHTML = `
+                <div class="row-rank">${index + 1}</div>
+                <div class="row-name">${player.name}${isClosest ? ' 🏆' : ''}</div>
+                <div class="row-score">
+                    <div style="font-size: 16px">${player.roundData ? Math.round(player.roundData.distance).toLocaleString() + ' km' : 'No guess'}</div>
+                    <div style="font-size: 11px; opacity:0.7">${isClosest ? 'Best Guess' : ''}</div>
+                </div>
+            `;
+            panel.appendChild(row);
+        });
+    } else {
+        const sortedPlayers = [...vsState.players].sort((a, b) => {
+            const totalA = (a.scores || []).reduce((sum, s) => sum + s, 0);
+            const totalB = (b.scores || []).reduce((sum, s) => sum + s, 0);
+            return totalB - totalA;
+        });
+
+        sortedPlayers.forEach((player, index) => {
+            const roundData = results.guesses[player.peerId];
+            const roundScore = roundData ? roundData.score : 0;
+            const totalScore = (player.scores || []).reduce((sum, s) => sum + s, 0);
+            
+            const row = document.createElement('div');
+            row.className = 'leaderboard-row';
+            if (index === 0) row.classList.add('gold');
+            else if (index === 1) row.classList.add('silver');
+            else if (index === 2) row.classList.add('bronze');
+            
+            row.innerHTML = `
+                <div class="row-rank">${index + 1}</div>
+                <div class="row-name">${player.name}</div>
+                <div class="row-score">
+                    <div style="font-size: 16px">+${roundScore.toLocaleString()}</div>
+                    <div style="font-size: 11px; opacity:0.7">${totalScore.toLocaleString()} total</div>
+                </div>
+            `;
+            panel.appendChild(row);
+        });
+    }
 
     panel.classList.add('visible');
 }

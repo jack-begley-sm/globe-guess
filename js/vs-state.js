@@ -5,6 +5,7 @@
 
 export const vsState = {
     isHost: false,
+    gameMode: 'vs', // 'vs' or 'coop'
     localPlayer: {
         name: '',
         peerId: ''
