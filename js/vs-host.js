@@ -25,6 +25,10 @@ import { onAllGuessesReceived, updatePlayerStatusList } from './vs-round.js';
 import { registerBroadcast } from './vs-network.js';
 import { saveSession, clearSession } from './user.js';
 import { requestWakeLock, releaseWakeLock } from './awake.js';
+import { PEER_CONFIG } from './peer-config.js';
+
+const Peer = window.Peer;
+const PeerJS = window.Peer;
 
 let peer = null;
 let connections = {};
@@ -37,20 +41,35 @@ export function initHost(roomCode) {
     requestWakeLock();
 
     if (peer) peer.destroy();
-    
-    peer = new Peer(roomCode);
+
+    const PeerClass = window.Peer; // Get the constructor from the window
+
+    if (!PeerClass) {
+        console.error("PeerJS not loaded from CDN yet.");
+        alert("Networking library still loading... please wait a moment and try again.");
+        return;
+    }
+
+    if (peer) peer.destroy();
+
+    // Use the class we just grabbed
+    peer = new PeerClass(roomCode, PEER_CONFIG);
 
     peer.on('open', (id) => {
         console.log('Host Peer ID:', id);
     });
 
     peer.on('connection', (conn) => {
-        conn.on('data', (data) => {
-            handleGuestData(conn.peer, data);
-        });
+        console.log(`[Host] Incoming connection from: ${conn.peer}`);
 
         conn.on('open', () => {
+            console.log(`[Host] Connection with ${conn.peer} is now OPEN`);
             connections[conn.peer] = conn;
+        });
+
+        conn.on('data', (data) => {
+            console.log(`[Host] Received data from ${conn.peer}:`, data);
+            handleGuestData(conn.peer, data);
         });
 
         conn.on('close', () => {

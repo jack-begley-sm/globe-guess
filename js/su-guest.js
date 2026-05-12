@@ -10,12 +10,16 @@ import { initGuesserPhase } from './su-guesser.js';
 import { initSpectatorView, updateLiveGuesserPin } from './su-spectator.js';
 import { initRoundReveal, showSuResults } from './su-results.js';
 import { saveSession } from './user.js';
+import { PEER_CONFIG } from './peer-config.js';
+
+const PeerJS = window.Peer;
 
 let hostConn = null;
 
 export function joinSuGame(roomCode, name) {
     saveSession({ roomCode, name, role: 'guest', mode: 'su' });
-    const peer = new Peer();
+
+    const peer = new Peer(undefined, PEER_CONFIG);
     
     peer.on('open', (id) => {
         suState.localPlayer.peerId = id;

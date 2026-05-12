@@ -156,6 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const suCode = params.get('join-su');
     const playerName = params.get('name');
 
+    console.log('--- URL DEBUG ---');
+    console.log('Full URL:', window.location.href);
+    console.log('Params found:', { vsCode, coopCode, suCode, playerName });
+
     // Handle automatic joins via URL
     if (vsCode) {
         vsState.roomCode = vsCode;

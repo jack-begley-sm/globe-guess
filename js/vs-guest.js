@@ -9,39 +9,53 @@ import { renderPlayerList } from './vs-lobby.js';
 import { handleVsEvent } from './vs-round.js';
 import { saveSession } from './user.js';
 import { registerSendGuess } from './vs-network.js';
+import { PEER_CONFIG  } from './peer-config.js';
 
 let peer = null;
 let hostConn = null;
 
+const PeerJS = window.Peer;
+
 export function joinGame(hostPeerId, name) {
+    console.log(`[Guest] Attempting to join room: ${hostPeerId} as ${name}`);
     vsState.roomCode = hostPeerId;
-    registerSendGuess(sendGuess); // synchronous - sendGuess guards itself with hostConn.open
-    saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs', gameMode: vsState.gameMode });
+
+    const PeerClass = window.Peer; // Get the constructor from the window
+
+    if (!PeerClass) {
+        console.error("PeerJS not loaded from CDN yet.");
+        alert("Networking library still loading... please wait a moment and try again.");
+        return;
+    }
 
     if (peer) peer.destroy();
-    peer = new Peer();
+
+    // Use the class we just grabbed
+    peer = new PeerClass(roomCode, PEER_CONFIG);
 
     peer.on('open', (id) => {
+        console.log('[Guest] My Peer ID is:', id);
         vsState.localPlayer.peerId = id;
         vsState.localPlayer.name = name;
 
+        console.log(`[Guest] Connecting to Host: ${hostPeerId}...`);
         const conn = peer.connect(hostPeerId);
         hostConn = conn;
 
         conn.on('open', () => {
-            registerSendGuess(sendGuess); // register once connection is live
+            console.log('[Guest] Connection OPEN. Sending join packet...');
             conn.send({ type: 'join', payload: { name } });
+
+            // Screen transitions
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
             document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
         });
-
-        conn.on('data', (data) => handleEvent(data.type, data.payload));
-        conn.on('close', () => { if (!vsState.gameOver) showDisconnectModal('Connection Lost', 'The host has left the game.'); });
-        conn.on('error', (err) => { console.error('Guest connection error:', err); showDisconnectModal('Connection Error', 'Could not connect to the host.'); });
     });
 
-    peer.on('error', (err) => { console.error('Guest peer error:', err); showDisconnectModal('Connection Error', 'PeerJS error occurred.'); });
+    peer.on('error', (err) => {
+        console.error('[Guest] PeerJS Global Error:', err.type, err);
+    });
 }
 
 function handleEvent(type, payload) {

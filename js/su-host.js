@@ -14,13 +14,14 @@ let peer = null;
 let connections = {};
 let hostAloneTimer = null;
 let hostAloneSeconds = 60;
+import { PEER_CONFIG } from './peer-config.js';
 
 export function initSuHost(roomCode) {
     saveSession({ roomCode, name: suState.localPlayer.name, role: 'host', mode: 'su' });
     requestWakeLock();
     if (peer) peer.destroy();
     
-    peer = new Peer(roomCode);
+    peer = new Peer(roomCode, PEER_CONFIG);
 
     peer.on('open', (id) => console.log('SU Host Peer ID:', id));
 
