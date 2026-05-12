@@ -557,6 +557,12 @@ input[type="range"] {
     cursor: pointer;
 }
 
+.row-rank-and-name{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .round-num {
     font-family: var(--font-mono);
     color: var(--color-muted);
@@ -586,6 +592,7 @@ input[type="range"] {
 .results-actions {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 16px;
 }
 

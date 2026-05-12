@@ -496,8 +496,10 @@ function renderRoundLeaderboard(results) {
                 const totalScore = player.scores.reduce((sum, s) => sum + (s || 0), 0);
 
                 row.innerHTML = `
+                <div class="row-rank-and-name">
                     <div class="row-rank">${index + 1}</div>
                     <div class="row-name">${player.name}${isClosest ? ' 🏆' : ''}</div>
+                </div>
                     <div class="row-score">
                         <div style="font-size: 16px">${player.roundData && player.roundData.distance !== Infinity ? Math.round(player.roundData.distance).toLocaleString() + ' km' : 'No guess'}</div>
                         <div style="font-size: 11px; opacity:0.7">+${roundScore.toLocaleString()} pts (${totalScore.toLocaleString()} total)</div>
