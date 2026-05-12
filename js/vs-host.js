@@ -204,7 +204,8 @@ function updateHostAloneTimer() {
 function quitGame() {
     clearSession();
     releaseWakeLock();
-    window.location.href = './';
+    // Instead of window.location.href = './';
+    window.location.href = window.location.origin + window.location.pathname;
 }
 
 export function kickPlayer(peerId) {

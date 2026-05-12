@@ -195,8 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Navigation Home Buttons
     document.querySelectorAll('.multiplayer-return-home, #btn-vs-return-home, #btn-su-return-home').forEach(btn => {
         btn.addEventListener('click', () => {
+            console.log('Cleaning session and returning home...');
             clearSession();
-            window.location.href = './';
+
+            // This forces the browser to the root URL without parameters
+            const cleanUrl = window.location.origin + window.location.pathname;
+            window.location.href = cleanUrl;
         });
     });
 
