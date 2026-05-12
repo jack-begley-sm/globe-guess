@@ -1,18 +1,6 @@
 // ============================================================
 // FILE: main.js
 // PURPOSE: Application entry point. Initializes all modules.
-//
-// DEPENDENCIES:
-//   - js/lobby.js
-//   - js/round.js
-//   - js/results.js
-//   - js/config.js
-//
-// USED BY:
-//   - index.html
-//
-// KEY FUNCTIONS:
-//   - DOMContentLoaded listener initializes the app
 // ============================================================
 
 import { initLobby } from './js/lobby.js';
@@ -38,7 +26,7 @@ import './css/su.css';
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Globe Guess Initializing...');
-    
+
     // Set version display
     const versionDisplay = document.getElementById('version-display');
     if (versionDisplay) versionDisplay.textContent = `v${VERSION}`;
@@ -131,43 +119,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (joinSubmitBtn) {
-        joinSubmitBtn.addEventListener('click', () => {
+        joinSubmitBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent accidental form reload
             const name = joinNameInput.value.trim();
             const code = joinCodeInput.value.trim().toUpperCase();
-            
+
             if (!name) {
                 document.getElementById('error-join-name').classList.remove('hidden');
                 joinNameInput.focus();
                 return;
             }
             document.getElementById('error-join-name').classList.add('hidden');
-            
+
             if (!code || code.length < 4) {
                 document.getElementById('error-join-code').classList.remove('hidden');
                 joinCodeInput.focus();
                 return;
             }
             document.getElementById('error-join-code').classList.add('hidden');
-            
-            // Redirect with join code and name
+
             const baseUrl = window.location.origin + window.location.pathname;
             const modeBtn = document.querySelector('#control-join-mode button.active');
             const mode = modeBtn ? modeBtn.dataset.mode : 'vs';
             let param = 'join';
             if (mode === 'su') param = 'join-su';
             if (mode === 'coop') param = 'join-coop';
-            
+
             window.location.href = `${baseUrl}?${param}=${code}&name=${encodeURIComponent(name)}`;
         });
     }
 
-    // Use query parameters instead of path — works on GitHub Pages
+    // Parse URL Parameters
     const params = new URLSearchParams(window.location.search);
     const vsCode = params.get('join') || params.get('join-vs');
     const coopCode = params.get('join-coop');
     const suCode = params.get('join-su');
     const playerName = params.get('name');
 
+    // Handle automatic joins via URL
     if (vsCode) {
         vsState.roomCode = vsCode;
         vsState.gameMode = 'vs';
@@ -177,9 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Globe Guess game";
             document.getElementById('modal-vs-join').classList.remove('hidden');
         }
-    }
-
-    if (coopCode) {
+    } else if (coopCode) {
         vsState.roomCode = coopCode;
         vsState.gameMode = 'coop';
         if (playerName) {
@@ -188,9 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Co-op game";
             document.getElementById('modal-vs-join').classList.remove('hidden');
         }
-    }
-
-    if (suCode) {
+    } else if (suCode) {
         suState.roomCode = suCode;
         if (playerName) {
             joinSuGame(suCode, playerName);
@@ -199,69 +184,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Modal Join Buttons
     document.getElementById('btn-vs-join-game').addEventListener('click', () => {
         const nameInput = document.getElementById('input-vs-guest-name');
         const name = nameInput.value.trim();
-        const errorMsg = document.getElementById('error-vs-guest-name');
-
-        if (!name) {
-            errorMsg.classList.remove('hidden');
-            nameInput.focus();
-            return;
-        }
-        errorMsg.classList.add('hidden');
-        joinGame(vsState.roomCode, name);
-    });
-
-    document.getElementById('btn-vs-return-home').addEventListener('click', () => {
-        clearSession();
-        window.location.href = './';
+        if (name) joinGame(vsState.roomCode, name);
     });
 
     document.getElementById('btn-su-join-game').addEventListener('click', () => {
         const nameInput = document.getElementById('input-su-guest-name');
         const name = nameInput.value.trim();
-        const errorMsg = document.getElementById('error-su-guest-name');
-
-        if (!name) {
-            errorMsg.classList.remove('hidden');
-            nameInput.focus();
-            return;
-        }
-        errorMsg.classList.add('hidden');
-        joinSuGame(suState.roomCode, name);
+        if (name) joinSuGame(suState.roomCode, name);
     });
 
-    document.getElementById('btn-su-return-home').addEventListener('click', () => {
-        clearSession();
-        window.location.href = './';
-    });
-
-    document.querySelectorAll('.multiplayer-return-home').forEach(btn => {
+    // Navigation Home Buttons
+    document.querySelectorAll('.multiplayer-return-home, #btn-vs-return-home, #btn-su-return-home').forEach(btn => {
         btn.addEventListener('click', () => {
             clearSession();
             window.location.href = './';
         });
     });
-    
+
+    // Module Initializations
     initLobby();
     initVsSetup();
     initSuSetup();
     initRoundEvents();
     initResults();
-    
-    // Initialize Lucide icons
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
 
-    // Preload Google Maps API immediately so it's ready when game starts
+    if (window.lucide) window.lucide.createIcons();
     preloadGoogleMaps();
 
-    // Check for existing session (reconnection)
+    // Session Restoration Logic
     const session = getSession();
-    if (session && !vsCode && !suCode) {
-        console.log('Found existing session:', session);
+    const isJoiningViaURL = (vsCode || coopCode || suCode);
+
+    if (session && !isJoiningViaURL) {
+        console.log('Restoring existing session:', session);
         if (session.role === 'host') {
             if (session.mode === 'vs') {
                 vsState.localPlayer.name = session.name;
@@ -276,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
             }
         } else {
+            // Guest restoration
             if (session.mode === 'vs') {
                 vsState.gameMode = session.gameMode || 'vs';
                 joinGame(session.roomCode, session.name);

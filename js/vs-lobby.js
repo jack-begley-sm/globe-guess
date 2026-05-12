@@ -97,16 +97,50 @@ async function handleSetupNext() {
 
     vsState.isHost = true;
     vsState.localPlayer.name = name;
-    
+
     const roundsBtn = document.querySelector('#control-vs-rounds button.active');
     vsState.totalRounds = parseInt(roundsBtn.dataset.value);
-    
+
     const regionBtn = document.querySelector('#vs-region-grid button.active');
     vsState.region = regionBtn.dataset.region;
 
     const roomCode = generateRoomCode();
     vsState.roomCode = roomCode;
-    vsState.localPlayer.peerId = roomCode; // Host ID is room code
+    vsState.localPlayer.peerId = roomCode;
+
+    // --- CONSOLIDATED ROBUST URL GENERATION ---
+    let finalJoinURL;
+    const modeParam = vsState.gameMode === 'coop' ? 'join-coop' : 'join';
+
+    if (window.Capacitor?.isNativePlatform()) {
+        // Native apps must point to the public web URL
+        finalJoinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
+    } else {
+        const currentURL = new URL(window.location.href);
+        const hostname = currentURL.hostname;
+
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            // Localhost testing: still use GitHub Pages for share links so others can join
+            finalJoinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
+        } else {
+            // Real network (GitHub Pages or local IP): use current path
+            finalJoinURL = `${currentURL.origin}${currentURL.pathname}?${modeParam}=${roomCode}`;
+        }
+    }
+
+    const urlInput = document.getElementById('input-share-url');
+    if (urlInput) {
+        urlInput.value = finalJoinURL;
+        urlInput.readOnly = false;
+
+        // Add listener for manual edits to update social links
+        urlInput.addEventListener('input', () => {
+            updateWhatsAppLink(urlInput.value);
+        });
+    }
+
+    updateWhatsAppLink(finalJoinURL);
+    // --- END URL GENERATION ---
 
     // Add host to players list
     vsState.players = [{
@@ -123,45 +157,10 @@ async function handleSetupNext() {
 
     // Prepare share screen
     document.getElementById('display-room-code').textContent = roomCode;
-    
-    // Packaged app always uses GitHub Pages so guests don't need the app
-    // Browser dev mode uses local network IP for testing
-    let joinURL;
-    const modeParam = vsState.gameMode === 'coop' ? 'join-coop' : 'join-vs';
-    if (window.Capacitor?.isNativePlatform()) {
-        joinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
-    } else {
-        const hostname = window.location.hostname;
-        const port = window.location.port || '5173';
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            // localhost is unreachable by guests — use GitHub Pages
-            joinURL = `${GITHUB_PAGES_URL}/?${modeParam}=${roomCode}`;
-        } else {
-            // Real network IP — guests on same WiFi can reach this
-            joinURL = `http://${hostname}:${port}/?${modeParam}=${roomCode}`;
-        }
-    }
-
-    const urlInput = document.getElementById('input-share-url');
-    if (urlInput) {
-        urlInput.value = joinURL;
-        urlInput.readOnly = false;
-    }
-
-    updateWhatsAppLink(joinURL);
-
-    function updateWhatsAppLink(url) {
-        const whatsappBtn = document.getElementById('btn-share-whatsapp');
-        const text = encodeURIComponent(`Join my Globe Guess game! ${url}`);
-        whatsappBtn.href = `https://wa.me/?text=${text}`;
-    }
-
-    urlInput.addEventListener('input', () => {
-        updateWhatsAppLink(urlInput.value);
-    });
 
     document.getElementById('btn-copy-link').onclick = () => {
-        navigator.clipboard.writeText(urlInput.value);
+        const valToCopy = urlInput ? urlInput.value : finalJoinURL;
+        navigator.clipboard.writeText(valToCopy);
         const btn = document.getElementById('btn-copy-link');
         const icon = btn.querySelector('i, svg');
         if (!icon) return;
@@ -174,12 +173,20 @@ async function handleSetupNext() {
         }, 2000);
     };
 
-
     // Transition
     document.getElementById('screen-vs-setup').classList.add('hidden');
     document.getElementById('screen-multiplayer-share').classList.remove('hidden');
-    
+
     renderPlayerList();
+}
+
+// Helper function (keep it inside or outside handleSetupNext as preferred)
+function updateWhatsAppLink(url) {
+    const whatsappBtn = document.getElementById('btn-share-whatsapp');
+    if (whatsappBtn) {
+        const text = encodeURIComponent(`Join my Globe Guess game! ${url}`);
+        whatsappBtn.href = `https://wa.me/?text=${text}`;
+    }
 }
 
 export function generateRoomCode() {
