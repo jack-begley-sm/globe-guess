@@ -36,8 +36,10 @@ import{t as e}from"./rolldown-runtime-lhHHWwHU.js";import{t}from"./config-C14Fzr
                     ${r.toLocaleString()}
                 </div>
             `,t.appendChild(i),n.forEach((n,r)=>{let i=n.peerId===e.closestPlayerId,a=document.createElement(`div`);a.className=`leaderboard-row`,i&&a.classList.add(`gold`);let o=n.roundData?n.roundData.score:0,s=n.scores.reduce((e,t)=>e+(t||0),0);a.innerHTML=`
+                <div class="row-rank-and-name">
                     <div class="row-rank">${r+1}</div>
                     <div class="row-name">${n.name}${i?` 🏆`:``}</div>
+                </div>
                     <div class="row-score">
                         <div style="font-size: 16px">${n.roundData&&n.roundData.distance!==1/0?Math.round(n.roundData.distance).toLocaleString()+` km`:`No guess`}</div>
                         <div style="font-size: 11px; opacity:0.7">+${o.toLocaleString()} pts (${s.toLocaleString()} total)</div>
