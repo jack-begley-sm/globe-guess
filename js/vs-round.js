@@ -519,8 +519,10 @@ function renderRoundLeaderboard(results) {
                 if (isClosest) row.classList.add('gold');
                 
                 row.innerHTML = `
+                <div class="row-rank-and-name">
                     <div class="row-rank">${index + 1}</div>
                     <div class="row-name">${player.name}${isClosest ? ' 🏆' : ''}</div>
+                </div>
                     <div class="row-score">
                         <div style="font-size: 16px">${roundData && roundData.distance !== Infinity ? Math.round(roundData.distance).toLocaleString() + ' km' : 'No guess'}</div>
                         <div style="font-size: 11px; opacity:0.7">+${roundScore.toLocaleString()} pts (${totalScore.toLocaleString()} total)</div>
