@@ -8,6 +8,7 @@ import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
 import { handleVsEvent } from './vs-round.js';
 import { saveSession } from './user.js';
+import { registerSendGuess } from './vs-network.js';
 
 let peer = null;
 let hostConn = null;
@@ -16,10 +17,7 @@ export function joinGame(hostPeerId, name) {
     vsState.roomCode = hostPeerId;
     saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs', gameMode: vsState.gameMode });
 
-    if (peer) {
-        peer.destroy();
-    }
-
+    if (peer) peer.destroy();
     peer = new Peer();
 
     peer.on('open', (id) => {
@@ -30,33 +28,19 @@ export function joinGame(hostPeerId, name) {
         hostConn = conn;
 
         conn.on('open', () => {
+            registerSendGuess(sendGuess); // register once connection is live
             conn.send({ type: 'join', payload: { name } });
-
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
             document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
         });
 
-        conn.on('data', (data) => {
-            handleEvent(data.type, data.payload);
-        });
-
-        conn.on('close', () => {
-            if (!vsState.gameOver) {
-                showDisconnectModal('Connection Lost', 'The host has left the game.');
-            }
-        });
-
-        conn.on('error', (err) => {
-            console.error('Guest connection error:', err);
-            showDisconnectModal('Connection Error', 'Could not connect to the host.');
-        });
+        conn.on('data', (data) => handleEvent(data.type, data.payload));
+        conn.on('close', () => { if (!vsState.gameOver) showDisconnectModal('Connection Lost', 'The host has left the game.'); });
+        conn.on('error', (err) => { console.error('Guest connection error:', err); showDisconnectModal('Connection Error', 'Could not connect to the host.'); });
     });
 
-    peer.on('error', (err) => {
-        console.error('Guest peer error:', err);
-        showDisconnectModal('Connection Error', 'PeerJS error occurred.');
-    });
+    peer.on('error', (err) => { console.error('Guest peer error:', err); showDisconnectModal('Connection Error', 'PeerJS error occurred.'); });
 }
 
 function handleEvent(type, payload) {

@@ -21,7 +21,8 @@
 
 import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
-import { onAllGuessesReceived, updatePlayerStatusList, checkAllGuessesReceived } from './vs-round.js';
+import { onAllGuessesReceived, updatePlayerStatusList } from './vs-round.js';
+import { registerBroadcast } from './vs-network.js';
 import { saveSession, clearSession } from './user.js';
 import { requestWakeLock, releaseWakeLock } from './awake.js';
 
@@ -200,12 +201,11 @@ export function kickPlayer(peerId) {
     broadcastPlayers();
 }
 
-export function broadcastEvent(type, payload) {
-    Object.values(connections).forEach(conn => {
-        if (conn.open) {
-            conn.send({ type, payload });
-        }
-    });
+function checkAllGuessesReceived() {
+    const activePlayers = vsState.players.filter(p => p.connected);
+    if (activePlayers.every(p => p.hasSubmitted)) {
+        onAllGuessesReceived();
+    }
 }
 
 function handleGuestGuess(peerId, data) {
@@ -214,15 +214,14 @@ function handleGuestGuess(peerId, data) {
         player.guesses[vsState.currentRound - 1] = data.latLng;
         player.lastTimeTaken = data.timeTaken;
         player.hasSubmitted = true;
-        
-        // Notify all clients that this player has submitted
         broadcastEvent('playerSubmitted', { peerId });
-        
-        // Update local host UI
         updatePlayerStatusList();
-        
-        // Check if all active players have guessed
         checkAllGuessesReceived();
     }
 }
 
+export function broadcastEvent(type, payload) {
+    Object.values(connections).forEach(conn => {
+        if (conn.open) conn.send({ type, payload });
+    });
+}

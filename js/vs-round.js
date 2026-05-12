@@ -4,12 +4,11 @@
 // ============================================================
 
 import { vsState } from './vs-state.js';
-import { broadcastEvent } from './vs-host.js';
-import { sendGuess as guestSendGuess } from './vs-guest.js';
 import { getRandomLocation, setVsStreetView } from './streetview.js';
 import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
+import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
 
 let timerInterval;
 let autoAdvanceTimeout;
@@ -18,6 +17,7 @@ let vsMarker = null;
 let revealMap = null;
 let isMapLocked = false;
 let nextVsLocationPromise = null;
+
 
 export function startVsRound() {
     vsState.gameStarted = true;
