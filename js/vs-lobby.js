@@ -180,11 +180,12 @@ async function handleSetupNext() {
     renderPlayerList();
 }
 
+
 // Helper function (keep it inside or outside handleSetupNext as preferred)
 function updateWhatsAppLink(url) {
     const whatsappBtn = document.getElementById('btn-share-whatsapp');
     if (whatsappBtn) {
-        const text = encodeURIComponent(`Join my Globe Guess game! ${url}`);
+        const text = encodeURIComponent(`${url}`);
         whatsappBtn.href = `https://wa.me/?text=${text}`;
     }
 }
