@@ -11,7 +11,7 @@ export const vsState = {
         peerId: ''
     },
     roomCode: '',
-    players: [], // { name, peerId, connected: bool, scores: [], guesses: [] }
+    players: [], // { name, peerId, connected: bool, scores: [], guesses: [], hasSubmitted: bool }
     currentRound: 1,
     totalRounds: 5,
     region: 'WORLD',

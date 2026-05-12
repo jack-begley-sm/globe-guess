@@ -179,18 +179,19 @@
 }
 
 .round-leaderboard-panel {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background: var(--color-bg-3);
     border-top: 2px solid var(--color-teal);
     padding: 20px;
-    z-index: 20;
+    z-index: 1000;
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     max-height: 50vh;
     overflow-y: auto;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
 }
 
 .round-leaderboard-panel.visible {
@@ -198,14 +199,14 @@
 }
 
 .leaderboard-row {
-    height: 64px;
+    height: 72px;
     display: grid;
-    grid-template-columns: 40px 1fr 120px;
+    grid-template-columns: 40px 1fr 160px;
     align-items: center;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.leaderboard-row.gold { color: #d2aa50; }
+.leaderboard-row.gold { color: var(--color-gold); }
 .leaderboard-row.silver { color: #a0a8b8; }
 .leaderboard-row.bronze { color: #c07840; }
 

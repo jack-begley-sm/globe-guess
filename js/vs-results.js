@@ -50,12 +50,14 @@ function renderFinalLeaderboard() {
     container.innerHTML = '';
 
     if (vsState.gameMode === 'coop') {
-        const totalScore = (vsState.players[0].scores || []).reduce((sum, s) => sum + s, 0);
+        const totalScore = vsState.players.length > 0 
+            ? (vsState.players[0].scores || []).reduce((sum, s) => sum + (s || 0), 0)
+            : 0;
         const teamScoreEl = document.createElement('div');
         teamScoreEl.className = 'team-total-score-card animate-reveal';
         teamScoreEl.innerHTML = `
             <div class="total-score-label">TEAM TOTAL SCORE</div>
-            <div class="total-score" style="font-size: 48px; color: var(--color-gold, #ffd700);">${totalScore.toLocaleString()}</div>
+            <div class="total-score" style="font-size: 48px; color: var(--color-gold);">${totalScore.toLocaleString()}</div>
         `;
         container.appendChild(teamScoreEl);
 
@@ -102,13 +104,13 @@ function renderFinalLeaderboard() {
         container.innerHTML = '<h3>LEADERBOARD</h3>';
 
         const sortedPlayers = [...vsState.players].sort((a, b) => {
-            const totalA = (a.scores || []).reduce((sum, s) => sum + s, 0);
-            const totalB = (b.scores || []).reduce((sum, s) => sum + s, 0);
+            const totalA = (a.scores || []).reduce((sum, s) => sum + (s || 0), 0);
+            const totalB = (b.scores || []).reduce((sum, s) => sum + (s || 0), 0);
             return totalB - totalA;
         });
 
         sortedPlayers.forEach((player, index) => {
-            const totalScore = (player.scores || []).reduce((sum, s) => sum + s, 0);
+            const totalScore = (player.scores || []).reduce((sum, s) => sum + (s || 0), 0);
             const totalDist = vsState.roundResults.reduce((sum, r) => {
                 const g = r.guesses[player.peerId];
                 return sum + (g ? g.distance : 0);
@@ -269,7 +271,7 @@ function openRoundModal(roundIndex) {
         Object.entries(round.guesses).forEach(([peerId, data]) => {
             if (!data.latLng) return;
             
-            const isClosest = vsState.gameMode === 'coop' && peerId === round.closestPlayerId;
+            const isClosest = peerId === round.closestPlayerId;
             const color = isClosest ? 'var(--color-gold, #ffd700)' : 'var(--color-teal)';
             
             const guessLatLng = [data.latLng.lat, data.latLng.lng];

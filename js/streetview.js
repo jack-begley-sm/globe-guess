@@ -215,7 +215,11 @@ function findValidCoords(region, attempt, resolve, reject) {
             return;
         }
         const pos = data.location.latLng;
-        resolve({ lat: pos.lat(), lng: pos.lng() });
+        resolve({
+            lat: pos.lat(),
+            lng: pos.lng(),
+            pano: data.location.pano
+        });
     }, reject);
 }
 

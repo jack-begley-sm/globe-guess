@@ -369,7 +369,8 @@ input[type="range"] {
     background: var(--color-danger);
 }
 
-#street-view-container {
+#street-view-container,
+#vs-street-view-container {
     position: absolute;
     top: 0;
     left: 0;
@@ -410,12 +411,14 @@ input[type="range"] {
     }
 }
 
-#guess-map-container {
+#guess-map-container,
+#vs-guess-map-container {
     flex: 1;
     min-height: 150px;
 }
 
-#guess-map {
+#guess-map,
+#vs-guess-map {
     width: 100%;
     height: 100%;
 }

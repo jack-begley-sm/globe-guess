@@ -21,7 +21,7 @@
 
 import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
-import { onAllGuessesReceived } from './vs-round.js';
+import { onAllGuessesReceived, updatePlayerStatusList, checkAllGuessesReceived } from './vs-round.js';
 import { saveSession, clearSession } from './user.js';
 import { requestWakeLock, releaseWakeLock } from './awake.js';
 
@@ -96,7 +96,8 @@ function handleJoin(peerId, payload) {
             peerId: peerId,
             connected: true,
             scores: [],
-            guesses: []
+            guesses: [],
+            hasSubmitted: false
         };
         vsState.players.push(player);
     }
@@ -212,20 +213,16 @@ function handleGuestGuess(peerId, data) {
     if (player && vsState.gameStarted) {
         player.guesses[vsState.currentRound - 1] = data.latLng;
         player.lastTimeTaken = data.timeTaken;
+        player.hasSubmitted = true;
         
         // Notify all clients that this player has submitted
         broadcastEvent('playerSubmitted', { peerId });
+        
+        // Update local host UI
+        updatePlayerStatusList();
         
         // Check if all active players have guessed
         checkAllGuessesReceived();
     }
 }
 
-function checkAllGuessesReceived() {
-    const activePlayers = vsState.players.filter(p => p.connected);
-    const guessesInRound = activePlayers.filter(p => p.guesses[vsState.currentRound - 1]);
-    
-    if (guessesInRound.length === activePlayers.length) {
-        onAllGuessesReceived();
-    }
-}

@@ -114,7 +114,8 @@ async function handleSetupNext() {
         peerId: roomCode,
         connected: true,
         scores: [],
-        guesses: []
+        guesses: [],
+        hasSubmitted: false
     }];
 
     // Initialize Host PeerJS
