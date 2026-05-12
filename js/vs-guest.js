@@ -15,6 +15,7 @@ let hostConn = null;
 
 export function joinGame(hostPeerId, name) {
     vsState.roomCode = hostPeerId;
+    registerSendGuess(sendGuess); // synchronous - sendGuess guards itself with hostConn.open
     saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs', gameMode: vsState.gameMode });
 
     if (peer) peer.destroy();

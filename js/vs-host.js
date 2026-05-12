@@ -32,13 +32,11 @@ let hostAloneTimer = null;
 let hostAloneSeconds = 60;
 
 export function initHost(roomCode) {
+    registerBroadcast(broadcastEvent); // synchronous - no need to wait for peer
     saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs', gameMode: vsState.gameMode });
     requestWakeLock();
-    
-    // Reset Peer if already exists
-    if (peer) {
-        peer.destroy();
-    }
+
+    if (peer) peer.destroy();
     
     peer = new Peer(roomCode);
 
