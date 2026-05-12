@@ -13,24 +13,25 @@ let peer = null;
 let hostConn = null;
 
 export function joinGame(hostPeerId, name) {
+    vsState.roomCode = hostPeerId;
     saveSession({ roomCode: hostPeerId, name, role: 'guest', mode: 'vs', gameMode: vsState.gameMode });
 
     if (peer) {
         peer.destroy();
     }
-    
+
     peer = new Peer();
 
     peer.on('open', (id) => {
         vsState.localPlayer.peerId = id;
         vsState.localPlayer.name = name;
-        
+
         const conn = peer.connect(hostPeerId);
         hostConn = conn;
 
         conn.on('open', () => {
             conn.send({ type: 'join', payload: { name } });
-            
+
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
             document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
@@ -71,10 +72,8 @@ function handleEvent(type, payload) {
         }
         renderPlayerList();
 
-        // Safety net: if we receive SU-style payload while in VS guest mode, 
-        // it means we connected to a Stitch Up host. Auto-switch.
-        if (payload.gameMode === 'su' || payload.gameState) {
-            console.warn('Connected to SU host while in VS mode. Switching...');
+        if (payload.gameMode !== 'vs') {
+            console.warn('Connected to non-VS host. Switching...');
             const baseUrl = window.location.origin + window.location.pathname;
             window.location.href = `${baseUrl}?join-su=${vsState.roomCode}&name=${encodeURIComponent(vsState.localPlayer.name)}`;
         }
