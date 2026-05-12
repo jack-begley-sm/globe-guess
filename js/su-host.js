@@ -10,7 +10,7 @@ import { initRoundReveal } from './su-results.js';
 import { saveSession, clearSession } from './user.js';
 import { requestWakeLock, releaseWakeLock } from './awake.js';
 
-let peer = null;
+let suHostPeer = null;
 let connections = {};
 let hostAloneTimer = null;
 let hostAloneSeconds = 60;
@@ -19,30 +19,30 @@ import { PEER_CONFIG } from './peer-config.js';
 export function initSuHost(roomCode) {
     saveSession({ roomCode, name: suState.localPlayer.name, role: 'host', mode: 'su' });
     requestWakeLock();
-    if (peer) peer.destroy();
-    
-    peer = new Peer(roomCode, PEER_CONFIG);
 
-    peer.on('open', (id) => console.log('SU Host Peer ID:', id));
+    // CHANGE 2: Clean up global
+    if (suHostPeer) {
+        suHostPeer.destroy();
+        suHostPeer = null;
+    }
 
-    peer.on('connection', (conn) => {
-        // Important: Add to connections immediately so we don't miss early broadcasts
+    // CHANGE 3: Use window.Peer and assign to global
+    suHostPeer = new window.Peer(roomCode, PEER_CONFIG);
+
+    suHostPeer.on('open', (id) => console.log('SU Host Peer ID:', id));
+
+    suHostPeer.on('connection', (conn) => {
         connections[conn.peer] = conn;
-        
         conn.on('data', (data) => handleGuestData(conn.peer, data));
         conn.on('open', () => {
             console.log('SU Connection open:', conn.peer);
-            // Re-confirm in connections
-            connections[conn.peer] = conn;
         });
         conn.on('close', () => handleDisconnect(conn.peer));
         conn.on('error', () => handleDisconnect(conn.peer));
     });
 
-    peer.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-            // Room code already taken, unlikely with 6 chars
-        }
+    suHostPeer.on('error', (err) => {
+        console.error('SU Peer Error:', err);
     });
 }
 

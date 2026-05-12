@@ -30,37 +30,36 @@ import { PEER_CONFIG } from './peer-config.js';
 const Peer = window.Peer;
 const PeerJS = window.Peer;
 
-let peer = null;
+let vsHostPeer = null;
 let connections = {};
 let hostAloneTimer = null;
 let hostAloneSeconds = 60;
 
 export function initHost(roomCode) {
-    registerBroadcast(broadcastEvent); // synchronous - no need to wait for peer
+    registerBroadcast(broadcastEvent);
     saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs', gameMode: vsState.gameMode });
     requestWakeLock();
 
-    if (peer) peer.destroy();
+    // CHANGE 2: Refer to the global variable, don't use 'let' or 'const' here
+    if (vsHostPeer) {
+        vsHostPeer.destroy();
+        vsHostPeer = null;
+    }
 
-    const PeerClass = window.Peer; // Get the constructor from the window
-
-
-    if (!PeerClass) {
+    if (!window.Peer) {
         console.error("PeerJS not loaded from CDN yet.");
-        alert("Networking library still loading... please wait a moment and try again.");
+        alert("Networking library still loading...");
         return;
     }
 
-    if (peer) peer.destroy();
+    // CHANGE 3: Assign to the global variable (vsHostPeer) without 'const'
+    vsHostPeer = new window.Peer(roomCode, PEER_CONFIG);
 
-    // Use the class we just grabbed
-    const peer = new window.Peer(roomCode, PEER_CONFIG);
-
-    peer.on('open', (id) => {
+    vsHostPeer.on('open', (id) => {
         console.log('Host Peer ID:', id);
     });
 
-    peer.on('connection', (conn) => {
+    vsHostPeer.on('connection', (conn) => {
         console.log(`[Host] Incoming connection from: ${conn.peer}`);
 
         conn.on('open', () => {
@@ -77,7 +76,7 @@ export function initHost(roomCode) {
             handleDisconnect(conn.peer);
         });
 
-        peer.on('error', (err) => {
+        vsHostPeer.on('error', (err) => {
             console.error('[Guest] PeerJS Error Type:', err.type);
             console.error('[Guest] Full Error Object:', err);
             // handleHostDisconnect(); // Temporarily comment this out so the screen stays
@@ -85,7 +84,7 @@ export function initHost(roomCode) {
         });
     });
 
-    peer.on('error', (err) => {
+    vsHostPeer.on('error', (err) => {
         console.error('Peer error:', err);
     });
 }

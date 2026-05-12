@@ -14,25 +14,26 @@ import { PEER_CONFIG } from './peer-config.js';
 
 const PeerJS = window.Peer;
 
+let suGuestPeer = null;
 let hostConn = null;
 
 export function joinSuGame(roomCode, name) {
     saveSession({ roomCode, name, role: 'guest', mode: 'su' });
 
-    // Safety check for the library
-    if (!window.Peer) {
-        console.error("PeerJS not loaded");
-        return;
+    if (suGuestPeer) {
+        suGuestPeer.destroy();
+        suGuestPeer = null;
     }
 
-    const peer = new window.Peer(undefined, PEER_CONFIG)
-    
-    peer.on('open', (id) => {
+    // CHANGE 2: Use window.Peer
+    suGuestPeer = new window.Peer(undefined, PEER_CONFIG);
+
+    suGuestPeer.on('open', (id) => {
         suState.localPlayer.peerId = id;
         suState.localPlayer.name = name;
-        
-        hostConn = peer.connect(roomCode);
-        
+
+        hostConn = suGuestPeer.connect(roomCode);
+
         hostConn.on('open', () => {
             hostConn.send({ type: 'join', payload: { name } });
             document.getElementById('modal-su-join').classList.add('hidden');
@@ -44,7 +45,7 @@ export function joinSuGame(roomCode, name) {
         hostConn.on('close', () => handleHostDisconnect());
     });
 
-    peer.on('error', (err) => {
+    suGuestPeer.on('error', (err) => {
         console.error('SU Guest Peer error:', err);
         handleHostDisconnect();
     });
