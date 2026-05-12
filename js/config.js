@@ -15,7 +15,7 @@
 //   - None (Exports constants)
 // ============================================================
 
-export const VERSION = '1.4.5';
+export const VERSION = '1.4.6';
 
 export const REGIONS = {
     WORLD:    { lat: [-60, 70],   lng: [-180, 180], radius: 200000 },

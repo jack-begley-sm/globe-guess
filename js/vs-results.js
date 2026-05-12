@@ -90,8 +90,10 @@ function renderFinalLeaderboard() {
             if (index === 0) rankHtml = '<i data-lucide="medal"></i>';
 
             row.innerHTML = `
+            <div class="row-rank-and-name">
                 <div class="row-rank">${rankHtml}</div>
                 <div class="row-name">${player.name}${player.connected ? '' : ' (Left)'}</div>
+            </div>
                 <div class="row-score">
                     <div>${player.closestCount} Best Guess${player.closestCount !== 1 ? 'es' : ''}</div>
                     <div style="font-size: 10px; opacity: 0.7">${Math.round(player.totalDist).toLocaleString()} km total</div>
@@ -132,8 +134,10 @@ function renderFinalLeaderboard() {
             else if (index === 2) rankHtml = '<i data-lucide="medal" style="opacity: 0.6"></i>';
 
             row.innerHTML = `
+            <div class="row-rank-and-name">               
                 <div class="row-rank">${rankHtml}</div>
                 <div class="row-name">${player.name}${player.connected ? '' : ' (Left)'}</div>
+                </div>
                 <div class="row-score">
                     <div>${totalScore.toLocaleString()} pts</div>
                     <div style="font-size: 10px; opacity: 0.7">${Math.round(totalDist).toLocaleString()} km</div>
@@ -234,9 +238,11 @@ function renderRoundSummary() {
         const row = document.createElement('div');
         row.className = 'leaderboard-row results-list-item';
         row.innerHTML = `
-            <div class="row-rank">${index + 1}</div>
-            <div class="row-name">Round ${index + 1}</div>
-            <div class="row-score">View Map <i data-lucide="chevron-right"></i></div>
+            <div class="row-rank-and-name">
+                <div class="row-rank">${index + 1}</div>
+                <div class="row-name">Round ${index + 1}</div>
+            </div>
+            <div class="row-score">View Map</div>
         `;
         row.onclick = () => openRoundModal(index);
         container.appendChild(row);

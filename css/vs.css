@@ -223,7 +223,7 @@
     min-width: 24px;
 }
 .row-name { text-align: left; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.row-score { text-align: right; font-weight: bold; display: flex; align-items: center; gap: 5px;}
+.row-score { text-align: right; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 5px;}
 
 /* Final Results */
 .awards-grid {
