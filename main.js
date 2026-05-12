@@ -156,34 +156,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const suCode = params.get('join-su');
     const playerName = params.get('name');
 
-    console.log('--- URL DEBUG ---');
-    console.log('Full URL:', window.location.href);
-    console.log('Params found:', { vsCode, coopCode, suCode, playerName });
-
-    // Handle automatic joins via URL
-    if (vsCode) {
-        vsState.roomCode = vsCode;
-        vsState.gameMode = 'vs';
-        if (playerName) {
+    if (playerName) {
+        if (vsCode) {
             joinGame(vsCode, playerName);
-        } else {
-            document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Globe Guess game";
-            document.getElementById('modal-vs-join').classList.remove('hidden');
-        }
-    } else if (coopCode) {
-        vsState.roomCode = coopCode;
-        vsState.gameMode = 'coop';
-        if (playerName) {
+            return;
+        } else if (coopCode) {
+            vsState.gameMode = 'coop';
             joinGame(coopCode, playerName);
-        } else {
-            document.getElementById('modal-vs-join').querySelector('h2').textContent = "You've been invited to a Co-op game";
-            document.getElementById('modal-vs-join').classList.remove('hidden');
-        }
-    } else if (suCode) {
-        suState.roomCode = suCode;
-        if (playerName) {
+            return;
+        } else if (suCode) {
             joinSuGame(suCode, playerName);
-        } else {
+            return;
+        }
+    } else {
+        // If we have a code but no name, show the appropriate modal
+        if (vsCode || coopCode) {
+            vsState.roomCode = vsCode || coopCode;
+            document.getElementById('modal-vs-join').classList.remove('hidden');
+        } else if (suCode) {
+            suState.roomCode = suCode;
             document.getElementById('modal-su-join').classList.remove('hidden');
         }
     }

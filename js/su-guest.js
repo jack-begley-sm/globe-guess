@@ -19,7 +19,13 @@ let hostConn = null;
 export function joinSuGame(roomCode, name) {
     saveSession({ roomCode, name, role: 'guest', mode: 'su' });
 
-    const peer = new Peer(undefined, PEER_CONFIG);
+    // Safety check for the library
+    if (!window.Peer) {
+        console.error("PeerJS not loaded");
+        return;
+    }
+
+    const peer = new window.Peer(undefined, PEER_CONFIG)
     
     peer.on('open', (id) => {
         suState.localPlayer.peerId = id;
@@ -54,7 +60,7 @@ export function handleSuEvent(type, payload) {
             if ((payload.gameMode === 'vs' || (!payload.gameMode && !payload.gameState)) && !suState.isHost) {
                 console.warn('Connected to VS host while in SU mode. Switching...');
                 const baseUrl = window.location.origin + window.location.pathname;
-                window.location.href = `${baseUrl}?join=${suState.roomCode}&name=${encodeURIComponent(suState.localPlayer.name)}`;
+                window.location.href = `${baseUrl}?join=${suState.roomCode}&name=...`
                 return;
             }
 
