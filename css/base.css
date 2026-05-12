@@ -67,3 +67,19 @@ input {
 .hidden {
     display: none !important;
 }
+
+:root {
+  /* existing variables ... */
+
+  /* Legacy aliases */
+  --color-text-dim:  var(--color-muted);
+  --color-red:       var(--color-danger);
+  --danger:          var(--color-danger);
+  --accent-color:    var(--color-teal);
+  --accent-hover:    var(--color-teal-dim);
+  --text-secondary:  var(--color-muted);
+  --success-color:   var(--color-teal);
+  --error-color:     var(--color-danger);
+  --card-bg:         var(--color-bg-2);
+  --text-primary:    var(--color-ivory);
+}
