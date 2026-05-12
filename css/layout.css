@@ -557,12 +557,12 @@ input[type="range"] {
     cursor: pointer;
 }
 
-.row-rank-and-name{
+.row-rank-and-name {
+    flex-direction: row;
+    gap: 6px;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    align-items: center;
 }
-
 .round-num {
     font-family: var(--font-mono);
     color: var(--color-muted);
