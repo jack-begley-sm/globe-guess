@@ -44,6 +44,7 @@ export function initHost(roomCode) {
 
     const PeerClass = window.Peer; // Get the constructor from the window
 
+
     if (!PeerClass) {
         console.error("PeerJS not loaded from CDN yet.");
         alert("Networking library still loading... please wait a moment and try again.");
@@ -53,7 +54,7 @@ export function initHost(roomCode) {
     if (peer) peer.destroy();
 
     // Use the class we just grabbed
-    peer = new PeerClass(roomCode, PEER_CONFIG);
+    const peer = new window.Peer(roomCode, PEER_CONFIG);
 
     peer.on('open', (id) => {
         console.log('Host Peer ID:', id);
@@ -76,9 +77,11 @@ export function initHost(roomCode) {
             handleDisconnect(conn.peer);
         });
 
-        conn.on('error', (err) => {
-            console.error('Connection error:', err);
-            handleDisconnect(conn.peer);
+        peer.on('error', (err) => {
+            console.error('[Guest] PeerJS Error Type:', err.type);
+            console.error('[Guest] Full Error Object:', err);
+            // handleHostDisconnect(); // Temporarily comment this out so the screen stays
+                                       // on the error and doesn't redirect you home!
         });
     });
 

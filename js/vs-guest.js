@@ -31,7 +31,7 @@ export function joinGame(hostPeerId, name) {
     if (peer) peer.destroy();
 
     // Use the class we just grabbed
-    peer = new PeerClass(undefined, PEER_CONFIG);
+    const peer = new window.Peer(undefined, PEER_CONFIG);
 
     peer.on('open', (id) => {
         console.log('[Guest] My Peer ID is:', id);
