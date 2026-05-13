@@ -60,15 +60,13 @@ export function initHost(roomCode) {
     });
 
     vsHostPeer.on('connection', (conn) => {
-        console.log(`[Host] Incoming connection from: ${conn.peer}`);
+        connections[conn.peer] = conn;
 
         conn.on('open', () => {
             console.log(`[Host] Connection with ${conn.peer} is now OPEN`);
-            connections[conn.peer] = conn;
         });
 
         conn.on('data', (data) => {
-            console.log(`[Host] Received data from ${conn.peer}:`, data);
             handleGuestData(conn.peer, data);
         });
 
@@ -76,16 +74,21 @@ export function initHost(roomCode) {
             handleDisconnect(conn.peer);
         });
 
-        vsHostPeer.on('error', (err) => {
-            console.error('[Guest] PeerJS Error Type:', err.type);
-            console.error('[Guest] Full Error Object:', err);
-            // handleHostDisconnect(); // Temporarily comment this out so the screen stays
-                                       // on the error and doesn't redirect you home!
+        // conn-level error — inside the callback where conn is in scope
+        conn.on('error', (err) => {
+            console.error(`[Host] Connection error with ${conn.peer}:`, err);
+            handleDisconnect(conn.peer);
         });
     });
 
+    // peer-level error — outside the connection callback, registered once
     vsHostPeer.on('error', (err) => {
-        console.error('Peer error:', err);
+        console.error('[Host] Peer error:', err.type, err);
+    });
+
+    conn.on('error', (err) => { handleDisconnect(conn.peer); });
+    vsHostPeer.on('error', (err) => {
+        console.error('[Host] Peer error:', err);
     });
 }
 

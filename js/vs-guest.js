@@ -14,7 +14,7 @@ import { PEER_CONFIG  } from './peer-config.js';
 let vsGuestPeer = null;
 let hostConn = null;
 
-const PeerJS = window.Peer;
+registerSendGuess(sendGuess);
 
 export function joinGame(hostPeerId, name) {
     vsState.roomCode = hostPeerId;
@@ -71,7 +71,7 @@ function handleEvent(type, payload) {
         }
         renderPlayerList();
 
-        if (payload.gameMode !== 'vs') {
+        if (payload.gameMode === 'su') {
             console.warn('Connected to non-VS host. Switching...');
             const baseUrl = window.location.origin + window.location.pathname;
             window.location.href = `${baseUrl}?join-su=${vsState.roomCode}&name=${encodeURIComponent(vsState.localPlayer.name)}`;

@@ -193,7 +193,7 @@ function updateHostAloneTimer() {
 function quitSuGame() {
     clearSession();
     releaseWakeLock();
-    window.location.href = './';
+    window.location.href = window.location.origin + window.location.pathname;
 }
 
 function skipCurrentRound(whoDropped) {
