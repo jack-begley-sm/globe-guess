@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' https://unpkg.com 'unsafe-eval';
-        connect-src 'self' https://*.peerjs.com wss://*.peerjs.com;
-        img-src 'self' data: https://*.googleapis.com https://*.gstatic.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;
+        script-src 'self' https://unpkg.com https://maps.googleapis.com 'unsafe-eval';
+        connect-src 'self'
+            https://unpkg.com
+            https://*.peerjs.com wss://*.peerjs.com
+            https://*.googleapis.com
+            https://*.gstatic.com;
+        img-src 'self' data: blob:
+            https://*.googleapis.com
+            https://*.gstatic.com;
+        style-src 'self' 'unsafe-inline'
+            https://fonts.googleapis.com
+            https://unpkg.com;
+        font-src 'self' https://fonts.gstatic.com data:;
     ">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -29,12 +37,12 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-BR53SWEJ.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-w2DnZ8AD.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-CP-FOr5Q.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-BQpTYqVG.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-B5-Pvdvw.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-Dq1XC1Zq.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-BRUf8En4.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-il7UXWya.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-DMR4ImC_.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-CcowmZ7v.js">
   <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-CEqWi1F3.css">
 </head>
 <body>
