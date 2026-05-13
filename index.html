@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' https://unpkg.com 'unsafe-eval';
-        connect-src 'self' https://*.peerjs.com wss://*.peerjs.com;
-        img-src 'self' data: https://*.googleapis.com https://*.gstatic.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;
+        script-src 'self' https://unpkg.com https://maps.googleapis.com 'unsafe-eval';
+        connect-src 'self'
+            https://unpkg.com
+            https://*.peerjs.com wss://*.peerjs.com
+            https://*.googleapis.com
+            https://*.gstatic.com;
+        img-src 'self' data: blob:
+            https://*.googleapis.com
+            https://*.gstatic.com;
+        style-src 'self' 'unsafe-inline'
+            https://fonts.googleapis.com
+            https://unpkg.com;
+        font-src 'self' https://fonts.gstatic.com data:;
     ">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">

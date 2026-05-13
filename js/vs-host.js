@@ -86,10 +86,6 @@ export function initHost(roomCode) {
         console.error('[Host] Peer error:', err.type, err);
     });
 
-    conn.on('error', (err) => { handleDisconnect(conn.peer); });
-    vsHostPeer.on('error', (err) => {
-        console.error('[Host] Peer error:', err);
-    });
 }
 
 function handleGuestData(peerId, data) {
