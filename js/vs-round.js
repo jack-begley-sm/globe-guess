@@ -1,7 +1,3 @@
-// ============================================================
-// FILE: js/vs-round.js
-// PURPOSE: Round orchestration for VS mode. Handles timer, reveal, advance.
-// ============================================================
 
 import { vsState } from './vs-state.js';
 import { getRandomLocation, setVsStreetView } from './streetview.js';
@@ -9,7 +5,7 @@ import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
-
+ 
 let timerInterval;
 let autoAdvanceTimeout;
 let vsMap = null;
@@ -17,51 +13,43 @@ let vsMarker = null;
 let revealMap = null;
 let isMapLocked = false;
 let nextVsLocationPromise = null;
-
-
+ 
+ 
 export function startVsRound() {
     vsState.gameStarted = true;
     vsState.players.forEach(p => {
         p.hasSubmitted = false;
         p.lastTimeTaken = 0;
     });
-    
-    // UI Updates
-    document.getElementById('vs-current-round').textContent = vsState.currentRound;
-    document.getElementById('vs-total-rounds').textContent = vsState.totalRounds;
-    document.getElementById('vs-round-reveal-overlay').classList.add('hidden');
-    document.getElementById('vs-round-leaderboard').classList.remove('visible');
-    document.getElementById('vs-waiting-message').classList.add('hidden');
-    document.getElementById('btn-vs-submit-guess').classList.remove('hidden');
-    document.getElementById('btn-vs-submit-guess').disabled = true;
-    
-    updatePlayerStatusList();
-    
-    // Transition to game screen
+ 
+    // show loading screen now; game screen revealed in initRoundUI once Street View is ready
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    document.getElementById('screen-vs-game').classList.remove('hidden');
-
+    document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
+    document.getElementById('waiting-title').textContent = 'Loading round...';
+    document.getElementById('waiting-subtitle').textContent =
+        `Round ${vsState.currentRound} of ${vsState.totalRounds}`;
+ 
     initVsMap();
     resetVsMap();
-
+ 
     if (vsState.isHost) {
-            setupHostRound();
-            // Preload next location in background if not last round
-            if (vsState.currentRound < vsState.totalRounds) {
-                nextVsLocationPromise = getRandomLocation(vsState.region);
-            }
+        setupHostRound();
+        // Preload next location in background if not last round
+        if (vsState.currentRound < vsState.totalRounds) {
+            nextVsLocationPromise = getRandomLocation(vsState.region);
         }
     }
-
+}
+ 
 async function setupHostRound() {
     try {
         // Use preloaded if available
         const locationData = nextVsLocationPromise
             ? await nextVsLocationPromise
             : await getRandomLocation(vsState.region);
-
+ 
         nextVsLocationPromise = null; // consume it
-
+ 
         vsState.currentLocation = { lat: locationData.lat, lng: locationData.lng };
         
         broadcastEvent('startGame', { 
@@ -75,12 +63,25 @@ async function setupHostRound() {
         console.error('Failed to get random location:', err);
     }
 }
-
+ 
 function initRoundUI(locationData) {
-    setVsStreetView(locationData.pano, 'vs-street-view-container');
+    document.getElementById('vs-current-round').textContent = vsState.currentRound;
+    document.getElementById('vs-total-rounds').textContent = vsState.totalRounds;
+    document.getElementById('vs-round-reveal-overlay').classList.add('hidden');
+    document.getElementById('vs-round-leaderboard').classList.remove('visible');
+    document.getElementById('vs-waiting-message').classList.add('hidden');
+    document.getElementById('btn-vs-submit-guess').classList.remove('hidden');
+    document.getElementById('btn-vs-submit-guess').disabled = true;
+    updatePlayerStatusList();
+ 
+    setVsStreetView(locationData.pano, 'vs-street-view-container'); // load before screen transition so old panorama is never visible
+ 
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('screen-vs-game').classList.remove('hidden');
+ 
     startTimer();
 }
-
+ 
 function startTimer() {
     let timeLeft = 180;
     const timerDisplay = document.getElementById('vs-display-timer');
@@ -89,9 +90,9 @@ function startTimer() {
     timerDisplay.textContent = timeLeft;
     progressBar.style.width = '100%';
     progressBar.classList.remove('danger');
-
+ 
     vsState.timerStart = Date.now();
-
+ 
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
@@ -102,7 +103,7 @@ function startTimer() {
         if (timeLeft <= 30) {
             progressBar.classList.add('danger');
         }
-
+ 
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             if (vsState.isHost) {
@@ -111,7 +112,7 @@ function startTimer() {
         }
     }, 1000);
 }
-
+ 
 function onTimerExpired() {
     // If host hasn't submitted
     const hostPlayer = vsState.players.find(p => p.peerId === vsState.localPlayer.peerId);
@@ -122,7 +123,7 @@ function onTimerExpired() {
     // For any player who hasn't guessed, auto-submit null is handled on host when all/timer ends
     onAllGuessesReceived();
 }
-
+ 
 export function handleVsEvent(type, payload) {
     switch (type) {
         case 'startGame':
@@ -136,6 +137,10 @@ export function handleVsEvent(type, payload) {
             handlePlayerSubmitted(payload.peerId);
             break;
         case 'roundReveal':
+            // LEADERBOARD FIX 1/3: guests never stored round results, so awards/km/summary were blank
+            if (!vsState.isHost) {
+                vsState.roundResults.push(payload);
+            }
             showRoundReveal(payload);
             break;
         case 'nextRound':
@@ -143,6 +148,10 @@ export function handleVsEvent(type, payload) {
             startVsRound();
             break;
         case 'showResults':
+            // LEADERBOARD FIX 3/3: use host's authoritative results rather than piecemeal guest copy
+            if (payload && payload.roundResults) {
+                vsState.roundResults = payload.roundResults;
+            }
             showVsResults();
             break;
         case 'playAgain':
@@ -157,7 +166,7 @@ export function handleVsEvent(type, payload) {
             break;
     }
 }
-
+ 
 function handlePlayerSubmitted(peerId) {
     const player = vsState.players.find(p => p.peerId === peerId);
     if (player) {
@@ -165,7 +174,7 @@ function handlePlayerSubmitted(peerId) {
         updatePlayerStatusList();
     }
 }
-
+ 
 export function updatePlayerStatusList() {
     const container = document.getElementById('vs-game-player-status');
     if (!container) return;
@@ -191,17 +200,17 @@ export function updatePlayerStatusList() {
         icon.classList.add('animate-spin');
     });
 }
-
+ 
 export function initVsMap() {
     if (vsMap) return;
-
+ 
     vsMap = L.map('vs-guess-map', {
         attributionControl: false,
         zoomControl: false
     }).setView([20, 0], MAP_SETTINGS.INITIAL_ZOOM);
-
+ 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(vsMap);
-
+ 
     vsMap.on('click', (e) => {
         if (isMapLocked) return;
         
@@ -214,7 +223,7 @@ export function initVsMap() {
             placeVsMarker(e.latlng);
         }
     });
-
+ 
     const widget = document.getElementById('vs-guess-map-widget');
     widget.addEventListener('click', (e) => {
         if (widget.classList.contains('collapsed')) {
@@ -223,10 +232,10 @@ export function initVsMap() {
             setTimeout(() => vsMap.invalidateSize(), 300);
         }
     });
-
+ 
     document.getElementById('btn-vs-submit-guess').addEventListener('click', () => submitVsGuess());
 }
-
+ 
 function placeVsMarker(latlng) {
     if (vsMarker) {
         vsMarker.setLatLng(latlng);
@@ -236,7 +245,7 @@ function placeVsMarker(latlng) {
     vsState.currentGuessLatLng = { lat: latlng.lat, lng: latlng.lng };
     document.getElementById('btn-vs-submit-guess').disabled = false;
 }
-
+ 
 function resetVsMap() {
     isMapLocked = false;
     if (vsMarker) {
@@ -251,7 +260,7 @@ function resetVsMap() {
     widget.classList.remove('expanded');
     setTimeout(() => vsMap.invalidateSize(), 300);
 }
-
+ 
 export function submitVsGuess(isForced = false) {
     isMapLocked = true;
     clearInterval(timerInterval);
@@ -264,7 +273,7 @@ export function submitVsGuess(isForced = false) {
     
     document.getElementById('btn-vs-submit-guess').classList.add('hidden');
     document.getElementById('vs-waiting-message').classList.remove('hidden');
-
+ 
     if (vsState.isHost) {
         const hostPlayer = vsState.players.find(p => p.peerId === vsState.localPlayer.peerId);
         hostPlayer.guesses[vsState.currentRound - 1] = latLng;
@@ -282,7 +291,7 @@ export function submitVsGuess(isForced = false) {
         updatePlayerStatusList();
     }
 }
-
+ 
 export function checkAllGuessesReceived() {
     const activePlayers = vsState.players.filter(p => p.connected);
     const guessesInRound = activePlayers.filter(p => p.hasSubmitted);
@@ -291,18 +300,18 @@ export function checkAllGuessesReceived() {
         onAllGuessesReceived();
     }
 }
-
+ 
 export function onAllGuessesReceived() {
     if (!vsState.isHost) return;
-
+ 
     const roundResults = {
         correctLocation: vsState.currentLocation,
         guesses: {}
     };
-
+ 
     let bestDistance = Infinity;
     let closestPlayerId = null;
-
+ 
     vsState.players.forEach(player => {
         const guess = player.guesses[vsState.currentRound - 1] || null;
         const result = calculateScore(
@@ -322,16 +331,16 @@ export function onAllGuessesReceived() {
             distance: result.distanceKm,
             timeTaken: player.lastTimeTaken || 0
         };
-
+ 
         if (guess && result.distanceKm < bestDistance) {
             bestDistance = result.distanceKm;
             closestPlayerId = player.peerId;
         }
     });
-
+ 
     // Always set closestPlayerId so we can highlight the best guess
     roundResults.closestPlayerId = closestPlayerId;
-
+ 
     if (vsState.gameMode === 'coop') {
         // In Co-op, everyone gets the same score for the round (the best one)
         const bestScore = closestPlayerId ? roundResults.guesses[closestPlayerId].score : 0;
@@ -340,17 +349,17 @@ export function onAllGuessesReceived() {
         });
         roundResults.bestScore = bestScore;
     }
-
+ 
     vsState.roundResults.push(roundResults);
     
     broadcastEvent('roundReveal', roundResults);
     showRoundReveal(roundResults);
 }
-
+ 
 export function showRoundReveal(results) {
     try {
         clearInterval(timerInterval);
-
+ 
         // Update local state with results (especially for guests who missed playersUpdate)
         Object.entries(results.guesses).forEach(([peerId, data]) => {
             let player = vsState.players.find(p => p.peerId === peerId);
@@ -367,7 +376,7 @@ export function showRoundReveal(results) {
             }
             player.scores[vsState.currentRound - 1] = data.score;
         });
-
+ 
         document.getElementById('vs-round-reveal-overlay').classList.remove('hidden');
         
         if (revealMap) {
@@ -381,7 +390,7 @@ export function showRoundReveal(results) {
             attributionControl: false
         }).setView([0, 0], 2);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(revealMap);
-
+ 
         const markers = [];
         const answerLatLng = [results.correctLocation.lat, results.correctLocation.lng];
         
@@ -392,7 +401,7 @@ export function showRoundReveal(results) {
             })
         }).addTo(revealMap);
         markers.push(answerMarker);
-
+ 
         Object.entries(results.guesses).forEach(([peerId, data]) => {
             if (!data.latLng) return;
             
@@ -407,7 +416,7 @@ export function showRoundReveal(results) {
                 })
             }).addTo(revealMap);
             markers.push(guessMarker);
-
+ 
             L.polyline([guessLatLng, answerLatLng], {
                 color: color,
                 weight: isClosest ? 3 : 2,
@@ -415,12 +424,12 @@ export function showRoundReveal(results) {
                 opacity: isClosest ? 1 : 0.6
             }).addTo(revealMap);
         });
-
+ 
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
             revealMap.fitBounds(group.getBounds(), { padding: [50, 50] });
         }
-
+ 
         renderRoundLeaderboard(results);
         
         if (vsState.isHost) {
@@ -441,7 +450,7 @@ export function showRoundReveal(results) {
         console.error('Error in showRoundReveal:', err);
     }
 }
-
+ 
 function renderRoundLeaderboard(results) {
     try {
         const panel = document.getElementById('vs-round-leaderboard');
@@ -452,7 +461,7 @@ function renderRoundLeaderboard(results) {
             console.warn('renderRoundLeaderboard: No guesses data');
             return;
         }
-
+ 
         // Sort all players present in this round's results by distance
         const playersThisRound = Object.entries(results.guesses).map(([peerId, data]) => {
             const player = vsState.players.find(p => p.peerId === peerId) || {};
@@ -468,12 +477,12 @@ function renderRoundLeaderboard(results) {
             const distB = b.roundData ? b.roundData.distance : Infinity;
             return distA - distB;
         });
-
+ 
         if (vsState.gameMode === 'coop') {
             const teamTotalScore = vsState.players.length > 0 
                 ? (vsState.players[0].scores || []).reduce((a, b) => a + (b || 0), 0)
                 : 0;
-
+ 
             const title = document.createElement('div');
             title.className = 'leaderboard-title';
             title.style.textAlign = 'center';
@@ -485,7 +494,7 @@ function renderRoundLeaderboard(results) {
                 </div>
             `;
             panel.appendChild(title);
-
+ 
             playersThisRound.forEach((player, index) => {
                 const isClosest = player.peerId === results.closestPlayerId;
                 const row = document.createElement('div');
@@ -494,7 +503,7 @@ function renderRoundLeaderboard(results) {
                 
                 const roundScore = player.roundData ? player.roundData.score : 0;
                 const totalScore = player.scores.reduce((sum, s) => sum + (s || 0), 0);
-
+ 
                 row.innerHTML = `
                 <div class="row-rank-and-name">
                     <div class="row-rank">${index + 1}</div>
@@ -531,7 +540,7 @@ function renderRoundLeaderboard(results) {
                 panel.appendChild(row);
             });
         }
-
+ 
         // Add a slight delay to ensure parent transition doesn't interfere with child reveal
         setTimeout(() => {
             panel.classList.add('visible');
@@ -540,7 +549,7 @@ function renderRoundLeaderboard(results) {
         console.error('Error in renderRoundLeaderboard:', err);
     }
 }
-
+ 
 function advanceRound() {
     clearTimeout(autoAdvanceTimeout);
     if (vsState.currentRound < vsState.totalRounds) {
@@ -548,7 +557,7 @@ function advanceRound() {
         vsState.currentRound++;
         startVsRound();
     } else {
-        broadcastEvent('showResults');
+        broadcastEvent('showResults', { roundResults: vsState.roundResults }); // LEADERBOARD FIX 2/3: send full results so guests have a complete copy
         showVsResults();
     }
 }

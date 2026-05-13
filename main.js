@@ -138,14 +138,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             document.getElementById('error-join-code').classList.add('hidden');
 
-            const baseUrl = window.location.origin + window.location.pathname;
             const modeBtn = document.querySelector('#control-join-mode button.active');
             const mode = modeBtn ? modeBtn.dataset.mode : 'vs';
-            let param = 'join';
-            if (mode === 'su') param = 'join-su';
-            if (mode === 'coop') param = 'join-coop';
 
-            window.location.href = `${baseUrl}?${param}=${code}&name=${encodeURIComponent(name)}`;
+            if (mode === 'su') {
+                joinSuGame(code, name);
+            } else if (mode === 'coop') {
+                vsState.gameMode = 'coop';
+                joinGame(code, name);
+            } else {
+                vsState.gameMode = 'vs';
+                joinGame(code, name);
+            }
         });
     }
 

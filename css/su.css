@@ -159,6 +159,7 @@
     font-weight: bold;
     border: none;
     cursor: pointer;
+    width: -webkit-fill-available;
 }
 
 #btn-su-submit-guess:disabled {
