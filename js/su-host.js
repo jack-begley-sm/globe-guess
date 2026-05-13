@@ -20,6 +20,8 @@ export function initSuHost(roomCode) {
     saveSession({ roomCode, name: suState.localPlayer.name, role: 'host', mode: 'su' });
     requestWakeLock();
 
+    history.replaceState({}, '', window.location.pathname);
+
     // CHANGE 2: Clean up global
     if (suHostPeer) {
         suHostPeer.destroy();

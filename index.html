@@ -12,7 +12,9 @@
             https://*.gstatic.com;
         img-src 'self' data: blob:
             https://*.googleapis.com
-            https://*.gstatic.com;
+            https://*.gstatic.com
+            https://*.basemaps.cartocdn.com
+            https://unpkg.com;
         style-src 'self' 'unsafe-inline'
             https://fonts.googleapis.com
             https://unpkg.com;
@@ -186,7 +188,7 @@
                     </div>
                     <div id="result-score" class="score-text">+4,850 pts</div>
                     <div id="result-mini-map"></div>
-                    <button id="btn-next-round" class="btn-next">NEXT ROUND</button>
+                    <button id="btn-next-round" class="btn-primary">NEXT ROUND</button>
                 </div>
             </div>
         </div>
@@ -350,7 +352,7 @@
                     <!-- Leaderboard rows -->
                 </div>
                 <div class="reveal-actions">
-                     <button id="btn-vs-next-round" class="btn-next hidden">NEXT ROUND</button>
+                     <button id="btn-vs-next-round" class="btn-primary hidden">NEXT ROUND</button>
                 </div>
             </div>
         </div>

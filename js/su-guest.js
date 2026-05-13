@@ -58,13 +58,13 @@ export function handleSuEvent(type, payload) {
             
             // Safety net: if we receive VS-style payload while in SU guest mode,
             // it means we connected to a VS host. Auto-switch.
-            if ((payload.gameMode === 'vs' || (!payload.gameMode && !payload.gameState)) && !suState.isHost) {
-                console.warn('Connected to VS host while in SU mode. Switching...');
+            if ((payload.gameMode === 'vs' || payload.gameMode === 'coop') && !suState.isHost) {
+                console.warn('[SU Guest] Connected to VS/coop host while in SU mode. Switching...');
                 const baseUrl = window.location.origin + window.location.pathname;
-                window.location.href = `${baseUrl}?join=${suState.roomCode}&name=${encodeURIComponent(suState.localPlayer.name)}`
+                const param = payload.gameMode === 'coop' ? 'join-coop' : 'join';
+                window.location.href = `${baseUrl}?${param}=${suState.roomCode}&name=${encodeURIComponent(suState.localPlayer.name)}`;
                 return;
             }
-
             // Sync game state if provided (recovery mechanism)
             if (payload.gameState && payload.gameState.inProgress) {
                 const gs = payload.gameState;
