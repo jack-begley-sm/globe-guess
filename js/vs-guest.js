@@ -14,10 +14,11 @@ import { PEER_CONFIG  } from './peer-config.js';
 let vsGuestPeer = null;
 let hostConn = null;
 
-registerSendGuess(sendGuess);
-
 export function joinGame(hostPeerId, name) {
+    registerSendGuess(sendGuess);
     vsState.roomCode = hostPeerId;
+
+    history.replaceState({}, '', window.location.pathname)
 
     // CHANGE 2: Clean up existing instance
     if (vsGuestPeer) {
@@ -38,6 +39,14 @@ export function joinGame(hostPeerId, name) {
         conn.on('open', () => {
             conn.send({ type: 'join', payload: { name } });
 
+            saveSession({
+                roomCode: hostPeerId,
+                name,
+                role: 'guest',
+                mode: 'vs',
+                gameMode: vsState.gameMode || 'vs',
+            });
+
             // Screen transitions
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
@@ -55,6 +64,11 @@ export function joinGame(hostPeerId, name) {
 
     vsGuestPeer.on('error', (err) => {
         console.error('[Guest] PeerJS Error:', err);
+
+        const message = err.type === 'peer-unavailable'
+            ? `Could not find room "${hostPeerId}". Check the code and try again.`
+            : `Connection error (${err.type}). Please try again.`;
+        showDisconnectModal('Could Not Connect', message);
     });
 }
 
@@ -72,7 +86,7 @@ function handleEvent(type, payload) {
         renderPlayerList();
 
         if (payload.gameMode === 'su') {
-            console.warn('Connected to non-VS host. Switching...');
+            console.warn('[Guest] Connected to SU host while in VS mode. Switching...');
             const baseUrl = window.location.origin + window.location.pathname;
             window.location.href = `${baseUrl}?join-su=${vsState.roomCode}&name=${encodeURIComponent(vsState.localPlayer.name)}`;
         }
