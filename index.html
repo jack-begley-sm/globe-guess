@@ -12,7 +12,9 @@
             https://*.gstatic.com;
         img-src 'self' data: blob:
             https://*.googleapis.com
-            https://*.gstatic.com;
+            https://*.gstatic.com
+            https://*.basemaps.cartocdn.com
+            https://unpkg.com;
         style-src 'self' 'unsafe-inline'
             https://fonts.googleapis.com
             https://unpkg.com;
@@ -37,13 +39,13 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-w2DnZ8AD.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-DKYGz0QH.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-BRUf8En4.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-il7UXWya.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-DMR4ImC_.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-CcowmZ7v.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-CEqWi1F3.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-yFoo3m8E.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-eX5DTJuE.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-DyAk0py6.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-CmkqvAGm.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-B608LVJj.css">
 </head>
 <body>
     <div id="app">
@@ -193,7 +195,7 @@
                     </div>
                     <div id="result-score" class="score-text">+4,850 pts</div>
                     <div id="result-mini-map"></div>
-                    <button id="btn-next-round" class="btn-next">NEXT ROUND</button>
+                    <button id="btn-next-round" class="btn-primary">NEXT ROUND</button>
                 </div>
             </div>
         </div>
@@ -357,7 +359,7 @@
                     <!-- Leaderboard rows -->
                 </div>
                 <div class="reveal-actions">
-                     <button id="btn-vs-next-round" class="btn-next hidden">NEXT ROUND</button>
+                     <button id="btn-vs-next-round" class="btn-primary hidden">NEXT ROUND</button>
                 </div>
             </div>
         </div>
