@@ -1,6 +1,6 @@
 
 import { vsState } from './vs-state.js';
-import { getRandomLocation, setVsStreetView } from './streetview.js';
+import { getRandomLocation, setVsStreetView, lockStreetView, unlockStreetView } from './streetview.js';
 import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
@@ -248,6 +248,9 @@ function placeVsMarker(latlng) {
  
 function resetVsMap() {
     isMapLocked = false;
+
+    unlockStreetView('vs-street-view-container');
+
     if (vsMarker) {
         vsMap.removeLayer(vsMarker);
         vsMarker = null;
@@ -264,6 +267,9 @@ function resetVsMap() {
 export function submitVsGuess(isForced = false) {
     isMapLocked = true;
     clearInterval(timerInterval);
+
+    lockStreetView('vs-street-view-container');
+
     const timeTaken = (Date.now() - vsState.timerStart) / 1000;
     const latLng = isForced ? null : vsState.currentGuessLatLng;
     

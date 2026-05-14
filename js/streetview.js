@@ -340,3 +340,22 @@ function generateRandomLatLng(region) {
     const lng = Math.random() * (region.lng[1] - region.lng[0]) + region.lng[0];
     return { lat, lng };
 }
+
+
+export function lockStreetView(containerId) {
+    const sv = panoramas[containerId];
+    if (sv) {
+        sv.setOptions({ clickToGo: false, linksControl: false });
+    }
+    const container = document.getElementById(containerId);
+    if (container) container.style.pointerEvents = 'none';
+}
+
+export function unlockStreetView(containerId) {
+    const sv = panoramas[containerId];
+    if (sv) {
+        sv.setOptions({ clickToGo: true, linksControl: true });
+    }
+    const container = document.getElementById(containerId);
+    if (container) container.style.pointerEvents = '';
+}
