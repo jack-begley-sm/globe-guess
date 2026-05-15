@@ -29,7 +29,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="awards.css">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -41,21 +40,25 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-Cn6RLFVA.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-Ded1C8TK.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-qoBmPzNg.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-CZmIISPB.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-Cz6w0KcT.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-B7bxBiDq.js">
-  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-B608LVJj.css">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-DvMVKKO1.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-GLWY0LAI.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-CCvJfBmo.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-PRX-oW-s.js">
+  <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-DMnnfBzi.css">
 </head>
 <body>
     <div id="app">
         <!-- SCREEN 1: LANDING -->
         <div id="screen-landing" class="screen">
             <div class="landing-content">
+                <div class="icon-container">
                 <i data-lucide="settings" class="settings-icon"></i>
-                <i data-lucide="trophy" class="trophy-icon" id="btn-awards"></i>
+                <button id="btn-awards" class="icon-button">
+                    <i data-lucide="trophy" class="trophy-icon"></i>
+                </button>
+                </div>
                 <div class="logo-container">
                     <img src="/globe-guess/assets/logo-CBl90VRx.png" alt="Globe Guess" class="logo">
                     <div class="version-tag" id="version-display">v0.1.2.3</div>
@@ -650,7 +653,6 @@
             <div id="awards-list"></div>
         </div>
     </div>
-
 
 </body>
 </html>
