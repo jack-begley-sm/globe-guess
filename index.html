@@ -29,6 +29,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="awards.css">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -40,12 +41,12 @@
     <!-- PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
-  <script type="module" crossorigin src="/globe-guess/assets/index-BiLda30t.js"></script>
+  <script type="module" crossorigin src="/globe-guess/assets/index-Cn6RLFVA.js"></script>
   <link rel="modulepreload" crossorigin href="/globe-guess/assets/rolldown-runtime-lhHHWwHU.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-DWhpSFJu.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-DgqS2IYC.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-BvoIf9Ue.js">
-  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-DJMV4reS.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/config-qoBmPzNg.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/scoring-CZmIISPB.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/streetview-Cz6w0KcT.js">
+  <link rel="modulepreload" crossorigin href="/globe-guess/assets/su-lobby-B7bxBiDq.js">
   <link rel="stylesheet" crossorigin href="/globe-guess/assets/index-B608LVJj.css">
 </head>
 <body>
@@ -54,6 +55,7 @@
         <div id="screen-landing" class="screen">
             <div class="landing-content">
                 <i data-lucide="settings" class="settings-icon"></i>
+                <i data-lucide="trophy" class="trophy-icon" id="btn-awards"></i>
                 <div class="logo-container">
                     <img src="/globe-guess/assets/logo-CBl90VRx.png" alt="Globe Guess" class="logo">
                     <div class="version-tag" id="version-display">v0.1.2.3</div>
@@ -212,6 +214,11 @@
 
                 <div id="results-list" class="results-list">
                     <!-- Round rows injected here -->
+                </div>
+
+                <div class="solo-awards-section">
+                    <h3 class="section-title">AWARDS</h3>
+                    <div id="solo-awards" class="awards-grid"></div>
                 </div>
 
                 <div class="results-actions">
@@ -627,5 +634,23 @@
             </div>
         </div>
     </div>
+
+
+    <!-- AWARDS PANEL -->
+    <div id="awards-panel" class="hidden">
+        <div id="awards-overlay"></div>
+        <div class="awards-sheet">
+            <div class="awards-sheet__header">
+                <span class="awards-sheet__title">AWARDS</span>
+                <button id="btn-awards-close">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div id="awards-stats"></div>
+            <div id="awards-list"></div>
+        </div>
+    </div>
+
+
 </body>
 </html>
