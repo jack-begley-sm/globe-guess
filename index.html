@@ -29,7 +29,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="awards.css">
+    <link rel="stylesheet" href="./css/awards.css">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -47,8 +47,12 @@
         <!-- SCREEN 1: LANDING -->
         <div id="screen-landing" class="screen">
             <div class="landing-content">
+                <div class="icon-container">
                 <i data-lucide="settings" class="settings-icon"></i>
-                <i data-lucide="trophy" class="trophy-icon" id="btn-awards"></i>
+                <button id="btn-awards" class="icon-button">
+                    <i data-lucide="trophy" class="trophy-icon"></i>
+                </button>
+                </div>
                 <div class="logo-container">
                     <img src="assets/images/logo.png" alt="Globe Guess" class="logo">
                     <div class="version-tag" id="version-display">v0.1.2.3</div>
@@ -644,8 +648,6 @@
             <div id="awards-list"></div>
         </div>
     </div>
-
-    <script type="module" src="js/awards.js"></script>
 
 </body>
 </html>

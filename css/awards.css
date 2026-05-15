@@ -6,10 +6,17 @@
 
 /* ── Trophy icon on landing screen ────────────────────────── */
 
+.icon-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-content: space-between;
+    flex-direction: row;
+    width: -webkit-fill-available;
+    padding: 0px 54px;
+}
+
 .trophy-icon {
-    position: absolute;
-    top: 20px;
-    right: 20px;              /* settings-icon sits top-left     */
     width: 28px;
     height: 28px;
     color: var(--color-muted);

@@ -17,6 +17,7 @@ import { preloadGoogleMaps } from './js/streetview.js';
 import { getSession, clearSession } from './js/user.js';
 import { initHost } from './js/vs-host.js';
 import { initSuHost } from './js/su-host.js';
+import { initAwards } from './js/awards.js';
 
 import './css/base.css';
 import './css/layout.css';
@@ -247,6 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    if (window.lucide) window.lucide.createIcons();
+    initAwards();
 
     console.log('Globe Guess Ready.');
 });

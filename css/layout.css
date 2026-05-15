@@ -58,7 +58,6 @@
 }
 
 .settings-icon {
-    position: absolute;
     top: 24px;
     right: 24px;
     color: var(--color-muted);

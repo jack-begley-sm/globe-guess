@@ -214,7 +214,7 @@ function _fmtDate(ts) {
 
 // ── Initialise ─────────────────────────────────────────────────────────────────
 
-function _init() {
+export function initAwards() {
     const openBtn = document.getElementById('btn-awards');
     if (openBtn) openBtn.addEventListener('click', openAwardsPanel);
 
@@ -224,5 +224,3 @@ function _init() {
     const overlay = document.getElementById('awards-overlay');
     if (overlay) overlay.addEventListener('click', closeAwardsPanel);
 }
-
-_init();
