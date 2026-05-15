@@ -1,0 +1,243 @@
+/* ============================================================
+   awards.css
+   Awards panel — trophy button on landing screen + bottom-sheet
+   modal. All colours reference base.css custom properties.
+   ============================================================ */
+
+/* ── Trophy icon on landing screen ────────────────────────── */
+
+.trophy-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;              /* settings-icon sits top-left     */
+    width: 28px;
+    height: 28px;
+    color: var(--color-muted);
+    cursor: pointer;
+    stroke-width: 1.5px;
+    transition: color 0.2s ease, transform 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.trophy-icon:hover,
+.trophy-icon:active {
+    color: var(--color-gold);
+    transform: scale(1.12);
+}
+
+/* ── Panel root ────────────────────────────────────────────── */
+
+#awards-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: flex-end;
+}
+
+#awards-panel.hidden {
+    display: none;
+}
+
+/* ── Backdrop ──────────────────────────────────────────────── */
+
+#awards-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    animation: awards-fade-in 0.2s ease;
+}
+
+@keyframes awards-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ── Sheet ─────────────────────────────────────────────────── */
+
+.awards-sheet {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-height: 88vh;
+    background: var(--color-bg-2);
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: awards-slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 0 -4px 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes awards-slide-up {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* drag handle */
+.awards-sheet::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+}
+
+/* ── Sheet header ──────────────────────────────────────────── */
+
+.awards-sheet__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.awards-sheet__title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    color: var(--color-ivory);
+    letter-spacing: 0.1em;
+}
+
+#btn-awards-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-3);
+    border: none;
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+}
+
+#btn-awards-close:hover,
+#btn-awards-close:active {
+    color: var(--color-ivory);
+    background: var(--color-bg);
+}
+
+#btn-awards-close i {
+    width: 16px;
+    height: 16px;
+}
+
+/* ── Stats bar ─────────────────────────────────────────────── */
+
+#awards-stats {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--color-muted);
+    letter-spacing: 0.04em;
+    padding: 10px 20px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+/* ── Scrollable list ───────────────────────────────────────── */
+
+#awards-list {
+    overflow-y: auto;
+    flex: 1;
+    padding-bottom: 32px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mode section header ───────────────────────────────────── */
+
+.awards-section-header {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--color-teal);
+    letter-spacing: 0.14em;
+    padding: 18px 20px 8px;
+}
+
+/* ── Award row ─────────────────────────────────────────────── */
+
+.awards-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.12s;
+}
+
+.awards-row:last-child {
+    border-bottom: none;
+}
+
+.awards-row:active {
+    background: var(--color-bg-3);
+}
+
+.awards-row--locked {
+    opacity: 0.35;
+}
+
+.awards-row__icon {
+    font-size: 1.5rem;
+    width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.awards-row__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.awards-row__title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--color-ivory);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.awards-row--locked .awards-row__title {
+    color: var(--color-muted);
+}
+
+.awards-row__desc {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--color-muted);
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+.awards-row__date {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--color-teal-dim);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+
+.awards-row__count {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-gold);
+    background: rgba(210, 170, 80, 0.1);
+    border: 1px solid rgba(210, 170, 80, 0.25);
+    border-radius: 8px;
+    padding: 3px 9px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+}

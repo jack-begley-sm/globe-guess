@@ -11,19 +11,24 @@ export const PEER_CONFIG = {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             {
-                urls: 'turn:openrelay.metered.ca:80',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:a.relay.metered.ca:80',
+                username: '092aacf00c972afac91d92f4',
+                credential: 'pUyw+U7S0SLkYwh3'
             },
             {
-                urls: 'turn:openrelay.metered.ca:443',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+                username: '092aacf00c972afac91d92f4',
+                credential: 'pUyw+U7S0SLkYwh3'
             },
             {
-                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                urls: 'turn:a.relay.metered.ca:443',
+                username: '092aacf00c972afac91d92f4',
+                credential: 'pUyw+U7S0SLkYwh3'
+            },
+            {
+                urls: 'turn:a.relay.metered.ca:443?transport=tcp',
+                username: '092aacf00c972afac91d92f4',
+                credential: 'pUyw+U7S0SLkYwh3'
             }
         ]
     }

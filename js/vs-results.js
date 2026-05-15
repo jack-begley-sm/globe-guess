@@ -6,6 +6,8 @@
 import { vsState } from './vs-state.js';
 import { broadcastEvent } from './vs-host.js';
 import { quitGame } from './vs-guest.js';
+import { saveVsAwards } from './awards.js';   // ← NEW
+import { getUser } from './user.js';           // ← NEW
 
 let detailMap = null;
 
@@ -155,6 +157,11 @@ function renderAwards() {
     container.innerHTML = '';
 
     const awards = calculateAwards(vsState.players, vsState.roundResults);
+
+    // ── Persist awards for the local player ────────────────────────────────
+    saveVsAwards(awards, getUser());
+    // ──────────────────────────────────────────────────────────────────────
+
     awards.forEach(award => {
         const card = document.createElement('div');
         card.className = 'award-card animate-reveal';
@@ -222,11 +229,11 @@ function calculateAwards(players, roundResults) {
     });
 
     return [
-        { icon: '🎯', title: 'Sharpshooter', desc: 'Closest single guess of the game', winner: sharpshooter.name },
-        { icon: '⚡', title: 'Speed Demon', desc: 'Fastest submission average', winner: speedDemon.name },
-        { icon: '💀', title: 'Lost at Sea', desc: 'Furthest single guess of the game', winner: lostAtSea.name },
-        { icon: '🌍', title: 'Globetrotter', desc: 'Most consistent distances', winner: globetrotter.name },
-        { icon: '🐢', title: 'Taking Their Time', desc: 'Slowest submission average', winner: takingTime.name }
+        { icon: '🎯', title: 'Sharpshooter',      desc: 'Closest single guess of the game',    winner: sharpshooter.name },
+        { icon: '⚡', title: 'Speed Demon',         desc: 'Fastest submission average',           winner: speedDemon.name },
+        { icon: '💀', title: 'Lost at Sea',         desc: 'Furthest single guess of the game',   winner: lostAtSea.name },
+        { icon: '🌍', title: 'Globetrotter',        desc: 'Most consistent distances',            winner: globetrotter.name },
+        { icon: '🐢', title: 'Taking Their Time',   desc: 'Slowest submission average',           winner: takingTime.name },
     ];
 }
 

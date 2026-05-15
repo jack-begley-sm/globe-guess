@@ -5,6 +5,8 @@
 
 import { suState } from './su-state.js';
 import { nextSuRound, broadcastSuEvent } from './su-host.js';
+import { saveSuAwards } from './awards.js';   // ← NEW
+import { getUser } from './user.js';           // ← NEW
 
 let revealMap = null;
 let revealTimer = null;
@@ -116,10 +118,11 @@ function initRevealMap(result) {
     
     if (result.guessLatLng) {
         const guessMarker = L.marker([result.guessLatLng.lat, result.guessLatLng.lng], { icon: tealIcon }).addTo(revealMap);
-        const polyline = L.polyline([
-            [result.correctLatLng.lat, result.correctLatLng.lng],
-            [result.guessLatLng.lat, result.guessLatLng.lng]
-        ], { color: 'var(--color-teal)', weight: 2, dashArray: '5, 10' }).addTo(revealMap);
+        const polyline = L.polyline(
+            [[result.correctLatLng.lat, result.correctLatLng.lng],
+             [result.guessLatLng.lat, result.guessLatLng.lng]],
+            { color: 'var(--color-teal)', weight: 2, dashArray: '5, 10' }
+        ).addTo(revealMap);
 
         const mid = L.latLng(
             (result.correctLatLng.lat + result.guessLatLng.lat) / 2,
@@ -200,7 +203,6 @@ function renderSuLeaderboard() {
         `;
         list.appendChild(row);
         
-        // Trigger animation
         setTimeout(() => row.style.opacity = '1', 10);
     });
 
@@ -244,7 +246,6 @@ export function openSuRoundModal(index) {
     modal.classList.remove('hidden');
 
     const detailMapContainer = document.getElementById('detail-map');
-    // We need to clear and re-init the map because Leaflet doesn't like being reused in a modal well
     detailMapContainer.innerHTML = '';
     const mapDiv = document.createElement('div');
     mapDiv.style.width = '100%';
@@ -293,6 +294,11 @@ function renderSuAwards() {
     awardsContainer.innerHTML = '';
 
     const awards = calculateSuAwards();
+
+    // ── Persist awards for the local player ────────────────────────────────
+    saveSuAwards(awards, getUser());
+    // ──────────────────────────────────────────────────────────────────────
+
     awards.forEach(award => {
         const card = document.createElement('div');
         card.className = 'award-card';
@@ -366,12 +372,12 @@ function calculateSuAwards() {
 
     return [
         { title: 'Master Stitcher', icon: '🎯', winner: getWinnerName(masterStitcherId) },
-        { title: 'Escape Artist', icon: '🗺️', winner: getWinnerName(escapeArtistId) },
-        { title: 'Hair Trigger', icon: '⚡', winner: getWinnerName(fastSetter?.setterId) },
-        { title: 'Deep Thinker', icon: '🐢', winner: getWinnerName(slowSetter?.setterId) },
-        { title: 'Lucky Escape', icon: '🎰', winner: getWinnerName(luckyEscape?.guesserId) },
-        { title: 'Ruthless', icon: '💀', winner: getWinnerName(ruthlessId) },
-        { title: 'Too Kind', icon: '🤝', winner: getWinnerName(tooKindId) },
-        { title: 'All-Rounder', icon: '🏆', winner: getWinnerName(allRounderId) }
+        { title: 'Escape Artist',   icon: '🗺️',  winner: getWinnerName(escapeArtistId) },
+        { title: 'Hair Trigger',    icon: '⚡', winner: getWinnerName(fastSetter?.setterId) },
+        { title: 'Deep Thinker',    icon: '🐢', winner: getWinnerName(slowSetter?.setterId) },
+        { title: 'Lucky Escape',    icon: '🎰', winner: getWinnerName(luckyEscape?.guesserId) },
+        { title: 'Ruthless',        icon: '💀', winner: getWinnerName(ruthlessId) },
+        { title: 'Too Kind',        icon: '🤝', winner: getWinnerName(tooKindId) },
+        { title: 'All-Rounder',     icon: '🏆', winner: getWinnerName(allRounderId) },
     ];
 }
