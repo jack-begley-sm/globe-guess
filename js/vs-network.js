@@ -20,6 +20,6 @@ export function broadcastEvent(type, payload) {
     if (_broadcastFn) _broadcastFn(type, payload);
 }
 
-export function sendVsGuess(latLng, timeTaken) {
-    if (_sendGuessFn) _sendGuessFn(latLng, timeTaken);
+export function sendVsGuess(latLng, timeTaken, round) {
+    if (_sendGuessFn) _sendGuessFn(latLng, timeTaken, round);
 }

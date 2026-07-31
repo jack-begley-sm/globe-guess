@@ -74,11 +74,21 @@ function initRoundUI(locationData) {
     document.getElementById('btn-vs-submit-guess').disabled = true;
     updatePlayerStatusList();
  
-    setVsStreetView(locationData.pano, 'vs-street-view-container'); // load before screen transition so old panorama is never visible
- 
+    // Unhide the game screen BEFORE constructing Street View so the container has
+    // real dimensions. Building a StreetViewPanorama inside a display:none container
+    // breaks Google's sizing math and commonly settles on a pitched-up (sky-facing)
+    // POV with no resize correction afterward.
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById('screen-vs-game').classList.remove('hidden');
- 
+
+    // Let the browser lay out the container (with real dimensions) before we build
+    // the panorama on its non-zero-sized element.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            setVsStreetView(locationData.pano, 'vs-street-view-container');
+        });
+    });
+
     startTimer();
 }
  
@@ -291,7 +301,7 @@ export function submitVsGuess(isForced = false) {
         
         checkAllGuessesReceived();
     } else {
-        guestSendGuess(latLng, timeTaken);
+        guestSendGuess(latLng, timeTaken, vsState.currentRound);
         const localPlayer = vsState.players.find(p => p.peerId === vsState.localPlayer.peerId);
         if (localPlayer) localPlayer.hasSubmitted = true;
         updatePlayerStatusList();

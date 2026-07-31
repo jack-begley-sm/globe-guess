@@ -157,6 +157,7 @@ async function handleSetupNext() {
 
     // Prepare share screen
     document.getElementById('display-room-code').textContent = roomCode;
+    document.getElementById('lobby-room-code').textContent = `CODE: ${roomCode}`;
 
     document.getElementById('btn-copy-link').onclick = () => {
         const valToCopy = urlInput ? urlInput.value : finalJoinURL;

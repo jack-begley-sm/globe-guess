@@ -28,21 +28,52 @@ let isLibraryLoaded = false;
 // ─────────────────────────────────────────────────────────────
 // API LOADING
 // ─────────────────────────────────────────────────────────────
+// Google's Maps bootstrap loader isn't designed to be injected twice. Doing so
+// clobbers window.__googleMapsCallback and is a documented cause of the loader
+// rendering a consent/privacy overlay. We append the <script> once and queue any
+// callers that need the API until the (single) script's async callback fires.
 
-export function preloadGoogleMaps() {
-    if (window.google && window.google.maps) return;
+let _mapsScriptInjected = false;
+const _mapsCallbacks = [];
 
+function drainMapsCallbacks() {
+    _mapsScriptInjected = false;
+    const pending = _mapsCallbacks.splice(0);
+    pending.forEach(cb => {
+        try { cb(); } catch (err) { console.error('Maps callback error:', err); }
+    });
+}
+
+function injectGoogleMapsScript() {
     window.__googleMapsCallback = () => {
         isLibraryLoaded = true;
         svService = new google.maps.StreetViewService();
-        console.log('Google Maps preloaded and ready');
+        console.log('Google Maps loaded');
+        drainMapsCallbacks();
     };
 
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&callback=__googleMapsCallback`;
     script.async = true;
     script.defer = true;
+    script.onerror = () => {
+        console.error('Google Maps failed to load');
+        _mapsScriptInjected = false;
+        const pending = _mapsCallbacks.splice(0);
+        pending.forEach(cb => {
+            try { cb(new Error('Google Maps failed to load')); } catch (err) { /* ignore */ }
+        });
+    };
     document.head.appendChild(script);
+}
+
+export function preloadGoogleMaps() {
+    if (window.google && window.google.maps) return;
+
+    if (!_mapsScriptInjected) {
+        _mapsScriptInjected = true;
+        injectGoogleMapsScript();
+    }
 }
 
 function loadGoogleMaps(callback) {
@@ -53,18 +84,16 @@ function loadGoogleMaps(callback) {
         return;
     }
 
-    window.__googleMapsCallback = () => {
-        isLibraryLoaded = true;
-        svService = new google.maps.StreetViewService();
-        callback();
-    };
+    if (_mapsScriptInjected) {
+        // A script is already mid-flight (e.g. from preloadGoogleMaps on app load).
+        // Queue our caller instead of injecting a second script tag.
+        _mapsCallbacks.push(callback);
+        return;
+    }
 
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&callback=__googleMapsCallback`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => console.error('Google Maps failed to load');
-    document.head.appendChild(script);
+    _mapsScriptInjected = true;
+    _mapsCallbacks.push(callback);
+    injectGoogleMapsScript();
 }
 
 // ─────────────────────────────────────────────────────────────

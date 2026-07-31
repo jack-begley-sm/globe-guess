@@ -229,14 +229,28 @@ function checkAllGuessesReceived() {
 
 function handleGuestGuess(peerId, data) {
     const player = vsState.players.find(p => p.peerId === peerId);
-    if (player && vsState.gameStarted) {
-        player.guesses[vsState.currentRound - 1] = data.latLng;
-        player.lastTimeTaken = data.timeTaken;
-        player.hasSubmitted = true;
-        broadcastEvent('playerSubmitted', { peerId });
-        updatePlayerStatusList();
-        checkAllGuessesReceived();
+    if (!player || !vsState.gameStarted) return;
+
+    // Use the round number the guest was playing when they submitted.
+    // Fall back to current round for old clients that don't send one.
+    const guessRound = (typeof data.round === 'number' && data.round >= 1)
+        ? data.round
+        : vsState.currentRound;
+
+    // Late guess for a previous round — the host has already advanced, so
+    // this round's results (if any) are settled. Silently drop it rather than
+    // corrupting the new round's slot.
+    if (guessRound !== vsState.currentRound) {
+        console.warn(`[Host] Dropping stale guess from ${peerId} for round ${guessRound} (current: ${vsState.currentRound})`);
+        return;
     }
+
+    player.guesses[guessRound - 1] = data.latLng;
+    player.lastTimeTaken = data.timeTaken;
+    player.hasSubmitted = true;
+    broadcastEvent('playerSubmitted', { peerId });
+    updatePlayerStatusList();
+    checkAllGuessesReceived();
 }
 
 export function broadcastEvent(type, payload) {

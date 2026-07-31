@@ -184,17 +184,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Modal Join Buttons
-    document.getElementById('btn-vs-join-game').addEventListener('click', () => {
+    // Modal Join Buttons — with re-entrancy guards. joinGame()/joinSuGame()
+    // unconditionally destroy any existing peer connection, so a second click
+    // while the connection is still being established (the modal isn't hidden
+    // until conn.on('open') fires) would tear down the live connection and get
+    // the guest kicked. Disable the button immediately on first click.
+    const vsJoinBtn = document.getElementById('btn-vs-join-game');
+    vsJoinBtn.addEventListener('click', () => {
         const nameInput = document.getElementById('input-vs-guest-name');
         const name = nameInput.value.trim();
-        if (name) joinGame(vsState.roomCode, name);
+        if (!name) return;
+        vsJoinBtn.disabled = true;
+        vsJoinBtn.textContent = 'CONNECTING...';
+        joinGame(vsState.roomCode, name);
     });
 
-    document.getElementById('btn-su-join-game').addEventListener('click', () => {
+    const suJoinBtn = document.getElementById('btn-su-join-game');
+    suJoinBtn.addEventListener('click', () => {
         const nameInput = document.getElementById('input-su-guest-name');
         const name = nameInput.value.trim();
-        if (name) joinSuGame(suState.roomCode, name);
+        if (!name) return;
+        suJoinBtn.disabled = true;
+        suJoinBtn.textContent = 'CONNECTING...';
+        joinSuGame(suState.roomCode, name);
     });
 
     // Navigation Home Buttons
@@ -232,6 +244,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 initHost(session.roomCode);
                 document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
                 document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
+                const lobbyCodeEl = document.getElementById('lobby-room-code');
+                if (lobbyCodeEl) lobbyCodeEl.textContent = `CODE: ${session.roomCode}`;
             } else if (session.mode === 'su') {
                 suState.localPlayer.name = session.name;
                 initSuHost(session.roomCode);

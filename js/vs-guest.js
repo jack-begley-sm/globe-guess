@@ -96,9 +96,9 @@ function handleEvent(type, payload) {
     handleVsEvent(type, payload);
 }
 
-export function sendGuess(latLng, timeTaken) {
+export function sendGuess(latLng, timeTaken, round) {
     if (hostConn && hostConn.open) {
-        hostConn.send({ type: 'guess', payload: { latLng, timeTaken } });
+        hostConn.send({ type: 'guess', payload: { latLng, timeTaken, round } });
     }
 }
 
