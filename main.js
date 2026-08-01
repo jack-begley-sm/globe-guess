@@ -142,6 +142,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const modeBtn = document.querySelector('#control-join-mode button.active');
             const mode = modeBtn ? modeBtn.dataset.mode : 'vs';
 
+            // Re-entrancy guard: joinGame()/joinSuGame() unconditionally destroy
+            // any existing peer connection, so a second click while connecting
+            // would tear down the live connection and get the guest kicked.
+            joinSubmitBtn.disabled = true;
+            joinSubmitBtn.textContent = 'CONNECTING...';
+
             if (mode === 'su') {
                 joinSuGame(code, name);
             } else if (mode === 'coop') {

@@ -50,6 +50,7 @@ export function joinGame(hostPeerId, name) {
             // Screen transitions
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
+            document.getElementById('screen-join-game').classList.add('hidden');
             document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
         });
 

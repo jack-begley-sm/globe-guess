@@ -104,6 +104,18 @@ async function handleSetupNext() {
     const regionBtn = document.querySelector('#vs-region-grid button.active');
     vsState.region = regionBtn.dataset.region;
 
+    // Re-hosting an existing room (e.g. "Play Again" after a game ends) —
+    // keep the same room code, peer connection, and player list instead of
+    // tearing down the live peer and disconnecting everyone into a new lobby.
+    if (vsState.roomCode) {
+        document.getElementById('screen-vs-setup').classList.add('hidden');
+        document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
+        const lobbyCodeEl = document.getElementById('lobby-room-code');
+        if (lobbyCodeEl) lobbyCodeEl.textContent = `CODE: ${vsState.roomCode}`;
+        renderPlayerList();
+        return;
+    }
+
     const roomCode = generateRoomCode();
     vsState.roomCode = roomCode;
     vsState.localPlayer.peerId = roomCode;

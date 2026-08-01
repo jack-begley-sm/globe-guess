@@ -103,6 +103,18 @@ async function handleSuSetupNext() {
     const regionBtn = document.querySelector('#su-region-grid button.active');
     suState.region = regionBtn.dataset.region;
 
+    // Re-hosting an existing room (e.g. "Play Again" after a game ends) —
+    // keep the same room code, peer connection, and player list instead of
+    // tearing down the live peer and disconnecting everyone into a new lobby.
+    if (suState.roomCode) {
+        document.getElementById('screen-su-setup').classList.add('hidden');
+        document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
+        const lobbyCodeEl = document.getElementById('lobby-room-code');
+        if (lobbyCodeEl) lobbyCodeEl.textContent = `CODE: ${suState.roomCode}`;
+        renderSuPlayerList(suState.players);
+        return;
+    }
+
     const roomCode = generateSuRoomCode();
     suState.roomCode = roomCode;
     suState.localPlayer.peerId = roomCode; // Host ID is room code

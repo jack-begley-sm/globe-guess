@@ -38,6 +38,7 @@ export function joinSuGame(roomCode, name) {
             hostConn.send({ type: 'join', payload: { name } });
             document.getElementById('modal-su-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
+            document.getElementById('screen-join-game').classList.add('hidden');
             document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
         });
 
