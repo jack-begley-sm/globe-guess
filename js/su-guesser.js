@@ -71,7 +71,10 @@ function initGuessMap() {
 
     guessMap.on('click', (e) => {
         if (mapContainer.classList.contains('expanded')) {
-            const { lat, lng } = e.latlng;
+            // Panning more than one world-width gives longitudes outside
+            // -180..180 (e.g. 380 instead of 20); wrap so the setter/spectator
+            // reveal doesn't render a duplicate world copy far from the guess.
+            const { lat, lng } = e.latlng.wrap();
             placeGuessPin(lat, lng);
         } else {
             // Expand on click

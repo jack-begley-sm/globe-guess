@@ -168,14 +168,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerName = params.get('name');
 
     if (playerName) {
+        // preloadGoogleMaps() would otherwise never run for a guest joining via a
+        // shared link (this branch returns before reaching the normal call further
+        // down), so the Maps script ends up being injected for the first time live
+        // during gameplay instead of warmed up at startup.
         if (vsCode) {
+            preloadGoogleMaps();
             joinGame(vsCode, playerName);
             return;
         } else if (coopCode) {
+            preloadGoogleMaps();
             vsState.gameMode = 'coop';
             joinGame(coopCode, playerName);
             return;
         } else if (suCode) {
+            preloadGoogleMaps();
             joinSuGame(suCode, playerName);
             return;
         }

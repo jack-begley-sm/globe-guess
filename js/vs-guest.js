@@ -13,8 +13,20 @@ import { PEER_CONFIG  } from './peer-config.js';
 
 let vsGuestPeer = null;
 let hostConn = null;
+let isQuitting = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
+const RECONNECT_DELAY_MS = 2000;
 
-export function joinGame(hostPeerId, name) {
+// isReconnect distinguishes a background retry (after the host's connection
+// drops, e.g. the host refreshed) from a fresh join: reconnects must not reset
+// the retry budget and must not yank the player back to the waiting screen if
+// they're mid-round.
+export function joinGame(hostPeerId, name, isReconnect = false) {
+    if (!isReconnect) {
+        reconnectAttempts = 0;
+    }
+    isQuitting = false;
     registerSendGuess(sendGuess);
     vsState.roomCode = hostPeerId;
 
@@ -37,6 +49,7 @@ export function joinGame(hostPeerId, name) {
         hostConn = conn;
 
         conn.on('open', () => {
+            reconnectAttempts = 0;
             conn.send({ type: 'join', payload: { name } });
 
             saveSession({
@@ -47,11 +60,16 @@ export function joinGame(hostPeerId, name) {
                 gameMode: vsState.gameMode || 'vs',
             });
 
-            // Screen transitions
+            document.getElementById('modal-vs-disconnect').classList.add('hidden');
+
+            // Screen transitions — skip on a background reconnect, the player
+            // may already be mid-round and shouldn't be bounced to waiting.
             document.getElementById('modal-vs-join').classList.add('hidden');
             document.getElementById('screen-landing').classList.add('hidden');
             document.getElementById('screen-join-game').classList.add('hidden');
-            document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
+            if (!isReconnect) {
+                document.getElementById('screen-multiplayer-waiting').classList.remove('hidden');
+            }
         });
 
     conn.on('data', (data) => {
@@ -59,12 +77,17 @@ export function joinGame(hostPeerId, name) {
         });
 
         conn.on('close', () => {
-            showDisconnectModal('Disconnected', 'Connection to host lost.');
+            retryOrGiveUp(hostPeerId, name);
         });
     });
 
     vsGuestPeer.on('error', (err) => {
         console.error('[Guest] PeerJS Error:', err);
+
+        if (isReconnect) {
+            retryOrGiveUp(hostPeerId, name);
+            return;
+        }
 
         const message = err.type === 'peer-unavailable'
             ? `Could not find room "${hostPeerId}". Check the code and try again.`
@@ -73,8 +96,28 @@ export function joinGame(hostPeerId, name) {
     });
 }
 
+// Host refreshing/blipping destroys the guest's DataConnection with no
+// warning. The host-side already re-associates a rejoining peer by name
+// (see handleJoin in vs-host.js), so it's safe to retry silently a few times
+// before giving up and showing the dead-end modal.
+function retryOrGiveUp(hostPeerId, name) {
+    if (isQuitting) return;
+
+    reconnectAttempts++;
+    if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+        showDisconnectModal('Disconnected', 'Connection to host lost.');
+        return;
+    }
+
+    setTimeout(() => {
+        if (isQuitting) return;
+        joinGame(hostPeerId, name, true);
+    }, RECONNECT_DELAY_MS);
+}
+
 function handleEvent(type, payload) {
     if (type === 'kicked') {
+        isQuitting = true; // don't let the host closing the connection trigger a reconnect
         showDisconnectModal('Removed', 'You were removed from the game by the host.');
         return;
     }
@@ -104,6 +147,7 @@ export function sendGuess(latLng, timeTaken, round) {
 }
 
 export function quitGame() {
+    isQuitting = true;
     if (hostConn && hostConn.open) {
         hostConn.send({ type: 'quit' });
     }

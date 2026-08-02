@@ -81,15 +81,25 @@ function initRoundUI(locationData) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById('screen-vs-game').classList.remove('hidden');
 
+    // The guess map is only ever constructed once (see initVsMap's `if (vsMap)
+    // return`), on the very first round. If that happened while this screen was
+    // still hidden (e.g. host, who reaches here after an async location fetch),
+    // Leaflet sizes itself against a zero-size container and stays tiny. Guests
+    // reach this point synchronously (location arrives in the event payload) so
+    // they rarely hit this, which is why it was host-only.
+    if (vsMap) {
+        requestAnimationFrame(() => vsMap.invalidateSize());
+    }
+
     // Let the browser lay out the container (with real dimensions) before we build
-    // the panorama on its non-zero-sized element.
+    // the panorama on its non-zero-sized element. Timer starts only once the
+    // panorama actually reports ready (or after a fallback timeout) so loading
+    // time doesn't silently eat into the round's time limit.
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-            setVsStreetView(locationData.pano, 'vs-street-view-container');
+            setVsStreetView(locationData.pano, 'vs-street-view-container', startTimer);
         });
     });
-
-    startTimer();
 }
  
 function startTimer() {
@@ -247,6 +257,12 @@ export function initVsMap() {
 }
  
 function placeVsMarker(latlng) {
+    // Panning the map more than one world-width gives longitudes outside
+    // -180..180 (e.g. 380 instead of 20). Wrap here so every consumer of
+    // currentGuessLatLng — scoring, network payload, the reveal map — gets a
+    // normalized value instead of one that renders in a duplicate world copy.
+    latlng = latlng.wrap();
+
     if (vsMarker) {
         vsMarker.setLatLng(latlng);
     } else {
@@ -276,8 +292,10 @@ function resetVsMap() {
  
 export function submitVsGuess(isForced = false) {
     isMapLocked = true;
-    clearInterval(timerInterval);
 
+    // Timer keeps running after submit so the player can still see time
+    // remaining while waiting on others; onTimerExpired() already checks
+    // hasSubmitted before forcing anything, so nothing needs to be cancelled here.
     lockStreetView('vs-street-view-container');
 
     const timeTaken = (Date.now() - vsState.timerStart) / 1000;

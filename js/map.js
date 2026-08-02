@@ -58,6 +58,12 @@ export function initMap() {
 }
 
 function placeMarker(latlng) {
+    // Panning the map more than one world-width gives longitudes outside
+    // -180..180 (e.g. 380 instead of 20). Wrap here so the result map's
+    // fitBounds/marker placement doesn't render a duplicate world copy far
+    // from the actual guess.
+    latlng = latlng.wrap();
+
     if (marker) {
         marker.setLatLng(latlng);
     } else {

@@ -149,13 +149,19 @@ export function initStreetView(regionName, knownLat = null, knownLng = null) {
     });
 }
 
-// Used by VS mode and Stitch Up to load a known pano into a specific container
-export function setVsStreetView(pano, containerId) {
+// Used by VS mode and Stitch Up to load a known pano into a specific container.
+// onReady (optional) fires once the panorama has actually rendered — or after a
+// 4s fallback — so callers can defer things like starting a round timer until
+// the player can actually see the panorama, rather than while it's still loading.
+export function setVsStreetView(pano, containerId, onReady) {
     const container = document.getElementById(containerId);
-    if (!container) return;
+    if (!container) {
+        if (onReady) onReady();
+        return;
+    }
 
     if (!isLibraryLoaded) {
-        loadGoogleMaps(() => setVsStreetView(pano, containerId));
+        loadGoogleMaps(() => setVsStreetView(pano, containerId, onReady));
         return;
     }
 
@@ -173,12 +179,25 @@ export function setVsStreetView(pano, containerId) {
         pano: pano
     };
 
+    let sv;
     if (panoramas[containerId]) {
-        const sv = panoramas[containerId];
+        sv = panoramas[containerId];
         sv.setOptions(options);
         sv.setPano(pano);
     } else {
-        panoramas[containerId] = new google.maps.StreetViewPanorama(container, options);
+        sv = new google.maps.StreetViewPanorama(container, options);
+        panoramas[containerId] = sv;
+    }
+
+    if (onReady) {
+        let resolved = false;
+        const finish = () => {
+            if (resolved) return;
+            resolved = true;
+            onReady();
+        };
+        google.maps.event.addListenerOnce(sv, 'pano_changed', () => setTimeout(finish, 500));
+        setTimeout(finish, 4000);
     }
 }
 

@@ -376,6 +376,10 @@ input[type="range"] {
     width: 100%;
     height: 100%;
     z-index: 1;
+    /* iOS Safari/WKWebView sometimes reads a tap as a small drag (pitching the
+       view up) instead of click-to-go navigation; this speeds up gesture
+       disambiguation. Unconfirmed without on-device testing. */
+    touch-action: manipulation;
 }
 
 .map-widget {
