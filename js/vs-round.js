@@ -17,6 +17,7 @@ let nextVsLocationPromise = null;
  
 export function startVsRound() {
     vsState.gameStarted = true;
+    vsState.gameOver = false;
     vsState.players.forEach(p => {
         p.hasSubmitted = false;
         p.lastTimeTaken = 0;
@@ -49,9 +50,12 @@ async function setupHostRound() {
             : await getRandomLocation(vsState.region);
  
         nextVsLocationPromise = null; // consume it
- 
-        vsState.currentLocation = { lat: locationData.lat, lng: locationData.lng };
-        
+
+        // Keep the pano id alongside lat/lng (not just { lat, lng }) — a guest who
+        // fully drops and rejoins mid-round (see resumeInProgressRound) needs it to
+        // rebuild the same Street View, not just know where it should point.
+        vsState.currentLocation = locationData;
+
         broadcastEvent('startGame', { 
             location: locationData, 
             round: vsState.currentRound, 
@@ -101,23 +105,78 @@ function initRoundUI(locationData) {
         });
     });
 }
- 
-function startTimer() {
-    let timeLeft = 180;
+
+// Called on a guest who fully dropped (not the silent background-reconnect path
+// in vs-guest.js) and rejoined via a fresh join — previously they'd land back on
+// the "waiting for host to start" screen with no way to see the in-progress round,
+// leaving the host stuck waiting on their guess until the timer ran out. Pulls
+// them straight into the live round instead, unless they'd already submitted
+// before dropping (host-side hasSubmitted survives a disconnect).
+export function resumeInProgressRound(gameState) {
+    const gameScreen = document.getElementById('screen-vs-game');
+    if (gameScreen && !gameScreen.classList.contains('hidden')) return; // already viewing it live
+
+    const localPlayer = vsState.players.find(p => p.peerId === vsState.localPlayer.peerId);
+    if (localPlayer && localPlayer.hasSubmitted) return; // already answered this round before dropping
+
+    vsState.gameStarted = true;
+    vsState.gameOver = false;
+    vsState.currentRound = gameState.currentRound;
+    vsState.totalRounds = gameState.totalRounds;
+    vsState.region = gameState.region;
+    vsState.currentLocation = gameState.currentLocation;
+
+    initVsMap();
+    resetVsMap();
+
+    document.getElementById('vs-current-round').textContent = vsState.currentRound;
+    document.getElementById('vs-total-rounds').textContent = vsState.totalRounds;
+    document.getElementById('vs-round-reveal-overlay').classList.add('hidden');
+    document.getElementById('vs-round-leaderboard').classList.remove('visible');
+    document.getElementById('vs-waiting-message').classList.add('hidden');
+    document.getElementById('btn-vs-submit-guess').classList.remove('hidden');
+    document.getElementById('btn-vs-submit-guess').disabled = true;
+    updatePlayerStatusList();
+
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('screen-vs-game').classList.remove('hidden');
+
+    if (vsMap) {
+        requestAnimationFrame(() => vsMap.invalidateSize());
+    }
+
+    const timeLimit = gameState.timeLimit || vsState.timeLimit;
+    const elapsedSeconds = (Date.now() - (gameState.timerStart || Date.now())) / 1000;
+    const remaining = Math.max(0, Math.round(timeLimit - elapsedSeconds));
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            setVsStreetView(gameState.currentLocation?.pano, 'vs-street-view-container', () => startTimer(remaining));
+        });
+    });
+}
+
+function startTimer(initialTimeLeft) {
+    let timeLeft = initialTimeLeft !== undefined ? initialTimeLeft : vsState.timeLimit;
     const timerDisplay = document.getElementById('vs-display-timer');
     const progressBar = document.getElementById('vs-timer-progress-bar');
-    
+
     timerDisplay.textContent = timeLeft;
-    progressBar.style.width = '100%';
+    progressBar.style.width = `${(timeLeft / vsState.timeLimit) * 100}%`;
     progressBar.classList.remove('danger');
- 
-    vsState.timerStart = Date.now();
- 
+
+    // A rejoining guest resumes with less than the full time left (see
+    // resumeInProgressRound) — timerStart is only reset here when we're not
+    // resuming, so the remaining-time math there isn't clobbered by this call.
+    if (initialTimeLeft === undefined) {
+        vsState.timerStart = Date.now();
+    }
+
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
         timerDisplay.textContent = timeLeft;
-        const pct = (timeLeft / 180) * 100;
+        const pct = (timeLeft / vsState.timeLimit) * 100;
         progressBar.style.width = `${pct}%`;
         
         if (timeLeft <= 30) {
@@ -149,7 +208,7 @@ export function handleVsEvent(type, payload) {
         case 'startGame':
             vsState.currentRound = payload.round;
             vsState.totalRounds = payload.totalRounds;
-            vsState.currentLocation = { lat: payload.location.lat, lng: payload.location.lng };
+            vsState.currentLocation = payload.location;
             startVsRound();
             initRoundUI(payload.location);
             break;
@@ -459,12 +518,21 @@ export function showRoundReveal(results) {
             }).addTo(revealMap);
         });
  
+        // Render the leaderboard before fitting bounds so its rendered height is
+        // known below — it's a fixed-position overlay sitting on top of the map
+        // (not part of its layout flow), so a marker near the bottom of a naive
+        // fitBounds result can end up completely hidden underneath it.
+        renderRoundLeaderboard(results);
+
         if (markers.length > 0) {
             const group = new L.featureGroup(markers);
-            revealMap.fitBounds(group.getBounds(), { padding: [50, 50] });
+            const panelEl = document.getElementById('vs-round-leaderboard');
+            const panelHeight = panelEl ? panelEl.getBoundingClientRect().height : 0;
+            revealMap.fitBounds(group.getBounds(), {
+                paddingTopLeft: [50, 50],
+                paddingBottomRight: [50, panelHeight + 50]
+            });
         }
- 
-        renderRoundLeaderboard(results);
         
         if (vsState.isHost) {
             const nextBtn = document.getElementById('btn-vs-next-round');

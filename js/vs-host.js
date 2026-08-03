@@ -130,9 +130,22 @@ function handleJoin(peerId, payload) {
 }
 
 function broadcastPlayers() {
-    broadcastEvent('playersUpdate', { 
+    broadcastEvent('playersUpdate', {
         players: vsState.players,
-        gameMode: vsState.gameMode
+        gameMode: vsState.gameMode,
+        // Lets a guest who fully rejoins (rather than silently reconnecting)
+        // recognize a round is already underway and jump straight into it
+        // instead of getting stuck on the waiting screen — see
+        // resumeInProgressRound in vs-round.js.
+        gameState: {
+            inProgress: vsState.gameStarted && !vsState.gameOver,
+            currentRound: vsState.currentRound,
+            totalRounds: vsState.totalRounds,
+            region: vsState.region,
+            currentLocation: vsState.currentLocation,
+            timeLimit: vsState.timeLimit,
+            timerStart: vsState.timerStart
+        }
     });
 }
 

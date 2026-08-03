@@ -19,7 +19,8 @@ export const vsState = {
     roundResults: [], // { correctLocation: {lat, lng}, guesses: { peerId: { lat, lng, score, distance } } }
     sessionAwards: {},
     gameStarted: false,
-    
+    gameOver: false,
+
     reset() {
         this.currentRound = 1;
         this.players.forEach(p => {
@@ -29,5 +30,6 @@ export const vsState = {
         this.roundResults = [];
         this.sessionAwards = {};
         this.gameStarted = false;
+        this.gameOver = false;
     }
 };

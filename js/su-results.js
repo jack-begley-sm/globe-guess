@@ -18,8 +18,6 @@ export function initRoundReveal(result) {
     const scorePanel = document.getElementById('su-score-panel');
     scorePanel.classList.remove('visible');
 
-    initRevealMap(result);
-
     // Update UI with results
     const setter = suState.players.find(p => p.peerId === result.setterId);
     const guesser = suState.players.find(p => p.peerId === result.guesserId);
@@ -37,6 +35,13 @@ export function initRoundReveal(result) {
     document.getElementById('su-reveal-setter-total').textContent = setter ? setter.setterScores.reduce((a,b)=>a+b, 0) + setter.guesserScores.reduce((a,b)=>a+b, 0) : 0;
 
     renderRevealLeaderboard();
+
+    // Built after the score panel's final content is in place (guesser/setter
+    // scores, leaderboard rows) so fitBounds can measure the panel's real
+    // rendered height — it's a fixed-position overlay on top of the map, not
+    // part of its layout flow, so an unpadded fitBounds can leave a marker
+    // completely hidden underneath it.
+    initRevealMap(result);
 
     setTimeout(() => scorePanel.classList.add('visible'), 500);
 
@@ -138,7 +143,12 @@ function initRevealMap(result) {
         }).addTo(revealMap);
 
         const bounds = L.latLngBounds([ansMarker.getLatLng(), guessMarker.getLatLng()]);
-        revealMap.fitBounds(bounds, { padding: [100, 100] });
+        const panelEl = document.getElementById('su-score-panel');
+        const panelHeight = panelEl ? panelEl.getBoundingClientRect().height : 0;
+        revealMap.fitBounds(bounds, {
+            paddingTopLeft: [100, 100],
+            paddingBottomRight: [100, panelHeight + 100]
+        });
     } else {
         revealMap.setView([result.correctLatLng.lat, result.correctLatLng.lng], 4);
     }

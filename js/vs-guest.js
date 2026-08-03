@@ -6,7 +6,7 @@
 
 import { vsState } from './vs-state.js';
 import { renderPlayerList } from './vs-lobby.js';
-import { handleVsEvent } from './vs-round.js';
+import { handleVsEvent, resumeInProgressRound } from './vs-round.js';
 import { saveSession } from './user.js';
 import { registerSendGuess } from './vs-network.js';
 import { PEER_CONFIG  } from './peer-config.js';
@@ -133,6 +133,14 @@ function handleEvent(type, payload) {
             console.warn('[Guest] Connected to SU host while in VS mode. Switching...');
             const baseUrl = window.location.origin + window.location.pathname;
             window.location.href = `${baseUrl}?join-su=${vsState.roomCode}&name=${encodeURIComponent(vsState.localPlayer.name)}`;
+            return;
+        }
+
+        // A guest who fully dropped and rejoined (fresh join, not the silent
+        // background reconnect below) would otherwise sit on the waiting screen
+        // forever while a round is already in progress — see vs-round.js.
+        if (payload.gameState && payload.gameState.inProgress) {
+            resumeInProgressRound(payload.gameState);
         }
         return;
     }

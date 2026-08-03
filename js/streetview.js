@@ -14,6 +14,7 @@
 //   - preloadGoogleMaps()            loads Maps API on app start
 //   - getRandomLocation(regionName)  returns random location coords (no pano ID)
 //   - setVsStreetView(pano, id)      sets SV to specific pano for VS mode
+//   - resizeVisiblePanoramas()       forces all visible panoramas to recompute size
 // ============================================================
 
 import { REGIONS } from './config.js';
@@ -189,6 +190,17 @@ export function setVsStreetView(pano, containerId, onReady) {
         panoramas[containerId] = sv;
     }
 
+    // Reused panorama instances don't recompute their internal size on their own
+    // (this is what caused the "tiny box top-left" regression when continuing to
+    // a new game in the same lobby — the container was hidden/shown again but the
+    // existing StreetViewPanorama kept whatever size it last measured). Force a
+    // resize once the container has settled into its real, final layout box.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            google.maps.event.trigger(sv, 'resize');
+        });
+    });
+
     if (onReady) {
         let resolved = false;
         const finish = () => {
@@ -347,6 +359,14 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         google.maps.event.clearInstanceListeners(sv);
         sv.setOptions(options);
         sv.setPano(data.location.pano);
+
+        // See the matching comment in setVsStreetView — reused panoramas need an
+        // explicit resize nudge once the container's final layout box is settled.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                google.maps.event.trigger(sv, 'resize');
+            });
+        });
     } else {
         sv = new google.maps.StreetViewPanorama(container, options);
         panoramas[containerId] = sv;
@@ -389,6 +409,35 @@ function generateRandomLatLng(region) {
     return { lat, lng };
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// VIEWPORT RESIZE HANDLING (iOS Safari dynamic toolbar)
+// ─────────────────────────────────────────────────────────────
+// Mobile Safari resizes the *visual* viewport as its address bar/toolbar
+// collapses or expands, without reliably firing a plain `resize` event that
+// Street View's own internal sizing reacts to. A panorama built (or last
+// measured) while the toolbar was showing can end up permanently short —
+// leaving a gap at the bottom of the real screen that a player joining via a
+// shared Safari link (rather than the installed app, which has no toolbar to
+// begin with) is far more likely to hit. Re-measure on every visualViewport
+// change so the panorama tracks the real visible area.
+export function resizeVisiblePanoramas() {
+    if (!(window.google && window.google.maps)) return;
+    Object.entries(panoramas).forEach(([containerId, sv]) => {
+        const el = document.getElementById(containerId);
+        if (el && el.offsetParent !== null) {
+            google.maps.event.trigger(sv, 'resize');
+        }
+    });
+}
+
+if (typeof window !== 'undefined') {
+    const scheduleResize = () => requestAnimationFrame(resizeVisiblePanoramas);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', scheduleResize);
+    }
+    window.addEventListener('orientationchange', () => setTimeout(resizeVisiblePanoramas, 300));
+}
 
 export function lockStreetView(containerId) {
     const sv = panoramas[containerId];

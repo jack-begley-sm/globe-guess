@@ -40,7 +40,8 @@ body {
     color: var(--color-ivory);
     font-family: var(--font-body);
     overflow: hidden;
-    height: 100vh;
+    height: 100vh; /* fallback for browsers without dvh support */
+    height: 100dvh; /* tracks the real visible viewport as Safari's toolbar collapses/expands */
     width: 100vw;
     line-height: 1.5;
 }
