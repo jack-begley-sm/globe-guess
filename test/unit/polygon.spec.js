@@ -30,12 +30,35 @@ describe('unrollRing', () => {
         expect(unrollRing(ring)).toEqual(ring);
     });
 
-    it('never leaves consecutive vertices more than 180 deg apart in longitude', () => {
-        const ring = [{ lat: 0, lng: 178 }, { lat: 0, lng: -179 }];
-        const out = unrollRing(ring);
-        for (let i = 1; i < out.length; i++) {
-            expect(Math.abs(out[i].lng - out[i - 1].lng)).toBeLessThanOrEqual(180);
+    it('never leaves consecutive vertices more than 180 deg apart, over a table of adversarial deltas', () => {
+        // Raw per-vertex deltas chosen to stress the tie-break at +/-180
+        // and the multi-wrap case, not just the doc's single 3-degree hop.
+        for (const rawDelta of [180, -180, 200, -200, 359, -359, 360, 720, -720]) {
+            const ring = [{ lat: 0, lng: 0 }, { lat: 0, lng: rawDelta }];
+            const out = unrollRing(ring);
+            expect(Math.abs(out[1].lng - out[0].lng)).toBeLessThanOrEqual(180);
         }
+    });
+
+    it('never leaves consecutive vertices more than 180 deg apart, over random rings (seeded)', () => {
+        const rng = createRng(7);
+        for (let t = 0; t < 200; t++) {
+            const n = 2 + Math.floor(rng() * 8);
+            const ring = Array.from({ length: n }, () => ({
+                lat: rng() * 170 - 85,
+                lng: rng() * 1440 - 720 // well outside +/-180 to exercise multi-wrap
+            }));
+            const out = unrollRing(ring);
+            for (let i = 1; i < out.length; i++) {
+                expect(Math.abs(out[i].lng - out[i - 1].lng)).toBeLessThanOrEqual(180);
+            }
+        }
+    });
+
+    it('unrolls the contract\'s own worked example: [178,-179,-177,179] -> [178,181,183,179]', () => {
+        const ring = [178, -179, -177, 179].map((lng) => ({ lat: 0, lng }));
+        const out = unrollRing(ring);
+        expect(out).toEqual([178, 181, 183, 179].map((lng) => ({ lat: 0, lng })));
     });
 
     it('unrolls -179 following 178 to 181', () => {
@@ -52,11 +75,13 @@ describe('unrollRing', () => {
         expect(twice).toEqual(once);
     });
 
-    it('does not mutate the input', () => {
+    it('does not mutate the input, and returns fresh objects', () => {
         const ring = [{ lat: 0, lng: 178 }, { lat: 0, lng: -179 }];
         const snapshot = JSON.parse(JSON.stringify(ring));
-        unrollRing(ring);
+        const out = unrollRing(ring);
         expect(ring).toEqual(snapshot);
+        expect(out).not.toBe(ring);
+        expect(out[0]).not.toBe(ring[0]);
     });
 });
 
@@ -78,6 +103,13 @@ describe('normalisePointTo', () => {
         const out = normalisePointTo({ lat: 42.5, lng: 380 }, ring);
         expect(out.lat).toBe(42.5);
     });
+
+    it('returns a copy of the point unchanged against an empty ring', () => {
+        const point = { lat: 1, lng: 2 };
+        const out = normalisePointTo(point, []);
+        expect(out).toEqual(point);
+        expect(out).not.toBe(point);
+    });
 });
 
 describe('pointInRing', () => {
@@ -87,6 +119,12 @@ describe('pointInRing', () => {
 
     it('is false for a point clearly outside', () => {
         expect(pointInRing({ lat: 20, lng: 20 }, SQUARE)).toBe(false);
+    });
+
+    it('is false for a point collinear with an edge but beyond its start vertex', () => {
+        // lat 0 is the line through the square's south edge (lng 0..10);
+        // lng -5 is collinear with that line but off the segment itself.
+        expect(pointInRing({ lat: 0, lng: -5 }, SQUARE)).toBe(false);
     });
 
     it('is false for a ring with fewer than 3 vertices', () => {
