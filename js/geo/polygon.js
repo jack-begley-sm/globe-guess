@@ -40,9 +40,8 @@ export function unrollRing(rawRing) {
     for (let i = 1; i < rawRing.length; i++) {
         const prevLng = out[i - 1].lng;
         const rawDiff = rawRing[i].lng - prevLng;
-        // Math.round ties toward +Infinity, so this lands diff in the
-        // half-open range [-180, 180) rather than [-180, 180] — that is
-        // what makes a second unrollRing pass reproduce the first exactly.
+        // Math.round ties toward +Infinity: diff lands in [-180, 180),
+        // which is what makes a second pass reproduce the first exactly.
         const diff = rawDiff - Math.round(rawDiff / 360) * 360;
         out.push({ lat: rawRing[i].lat, lng: prevLng + diff });
     }
@@ -51,14 +50,10 @@ export function unrollRing(rawRing) {
 
 /**
  * Moves `point` into `ring`'s unrolled longitude frame by adding a
- * multiple of 360, choosing the representation nearest the ring's
- * longitude midpoint. Latitude passes through untouched.
- *
- * Precondition: `ring`'s unrolled longitude span must be < 360 degrees
- * (custom-draft.js rejects wider rings at draw time — see
- * 02-geometry-contracts.md's runtime-enforcement table). Outside that,
- * the ring no longer fits in a single [mid-180, mid+180) window and a
- * point can be normalised to the wrong side.
+ * multiple of 360, nearest the ring's longitude midpoint. Latitude
+ * passes through untouched. Precondition: `ring`'s span is < 360
+ * degrees (enforced at draw time — see the runtime-enforcement table
+ * in 02-geometry-contracts.md) or a point can normalise to the wrong side.
  * @param {LatLng} point
  * @param {Ring} ring - already unrolled, span < 360 degrees
  * @returns {LatLng} `point` unchanged (copied) if `ring` is empty
@@ -92,9 +87,9 @@ function isOnSegment(point, a, b) {
 }
 
 /**
- * Even-odd ray cast in the ring's own frame. Caller normalises first —
- * this does not call normalisePointTo. Boundary points (on a vertex or
- * an edge) count as inside. Winding order does not affect the result.
+ * Even-odd ray cast in the ring's own frame (caller normalises first —
+ * this does not call normalisePointTo). Boundary points count as inside;
+ * winding order does not affect the result.
  * @param {LatLng} point
  * @param {Ring} ring
  * @returns {boolean}
@@ -121,12 +116,8 @@ export function pointInRing(point, ring) {
     return inside;
 }
 
-/**
- * Bounding box in the ring's own (already-unrolled) frame — `east` may
- * exceed 180. A single-vertex ring returns a zero-area box at that vertex.
- * @param {Ring} ring
- * @returns {{south:number, west:number, north:number, east:number}}
- */
+/** Bounding box in the ring's own frame (`east` may exceed 180); a
+ *  single-vertex ring returns a zero-area box at that vertex. */
 export function ringBbox(ring) {
     let south = Infinity, north = -Infinity, west = Infinity, east = -Infinity;
     for (const p of ring) {
