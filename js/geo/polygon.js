@@ -15,6 +15,8 @@
 //   - unrollRing(rawRing)          antimeridian-safe copy of a ring
 //   - normalisePointTo(point, ring) moves a point into a ring's frame
 //   - pointInRing(point, ring)     even-odd ray cast, boundary = inside
+//   - ringBbox(ring)               bounding box in the ring's own frame
+//   - containsPoint(point, shape)  normalise + bbox reject + ray cast
 // ============================================================
 
 /**
@@ -108,4 +110,38 @@ export function pointInRing(point, ring) {
         }
     }
     return inside;
+}
+
+/**
+ * Bounding box in the ring's own (already-unrolled) frame — `east` may
+ * exceed 180. A single-vertex ring returns a zero-area box at that vertex.
+ * @param {Ring} ring
+ * @returns {{south:number, west:number, north:number, east:number}}
+ */
+export function ringBbox(ring) {
+    let south = Infinity, north = -Infinity, west = Infinity, east = -Infinity;
+    for (const p of ring) {
+        if (p.lat < south) south = p.lat;
+        if (p.lat > north) north = p.lat;
+        if (p.lng < west) west = p.lng;
+        if (p.lng > east) east = p.lng;
+    }
+    return { south, north, west, east };
+}
+
+/**
+ * Normalises `point` into `shape.ring`'s frame, fast-rejects against
+ * `shape.bbox`, then falls back to the full ray cast. This is what
+ * game code calls — `pointInRing` is the pure primitive.
+ * @param {LatLng} point
+ * @param {{ring: Ring, bbox: {south:number, west:number, north:number, east:number}}} shape
+ * @returns {boolean}
+ */
+export function containsPoint(point, shape) {
+    const p = normalisePointTo(point, shape.ring);
+    const { south, north, west, east } = shape.bbox;
+    if (p.lat < south || p.lat > north || p.lng < west || p.lng > east) {
+        return false;
+    }
+    return pointInRing(p, shape.ring);
 }
