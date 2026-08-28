@@ -89,4 +89,5 @@ overruns is visible as a conceptualization problem rather than a personal one.
 ```
 | # | Evenings actually | Box held? | Note |
 |---|---|---|---|
+| 1 | 1 | Yes | npm i pulled vitest 3.2.7 against a `^4.0.4` peer from vitest-cucumber — npm's arborist errored (`edgesOut`) on a plain install; `--legacy-peer-deps` resolved it clean to vitest@4.1.11 throughout. |
 ```
