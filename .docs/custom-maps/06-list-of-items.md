@@ -93,4 +93,5 @@ overruns is visible as a conceptualization problem rather than a personal one.
 | 2 | 1 | Yes | Both failure modes observed: wrong Examples value fails with a clear expected/received diff; a commented-out `Then` step fails the whole file with "Missing steps in Scenario". Both reverted, suite green (2 files, 10 tests). |
 | 3 | 1 | Yes | mulberry32 in test/support/rng.js. Same-seed/different-seed/range tests all green. |
 | 4 | 1 | Yes | `test.yml` added (push+PR gate). `needs: test` across workflow files isn't valid GH Actions (needs only crosses jobs in the same workflow), so deploy.yml instead runs `npm ci` + `npm test` as steps before build — deploy still cannot go out red. Also switched `npm install`→`npm ci` in deploy.yml. |
+| 5 | 1 | Yes | `js/geo/polygon.js`: `unrollRing` walks the ring accumulating the minimal per-edge delta (`diff - round(diff/360)*360`); `normalisePointTo` shifts by whole multiples of 360 toward the ring's lng midpoint (`min+max)/2`). All contract cases green. |
 ```
