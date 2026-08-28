@@ -14,6 +14,7 @@
 // KEY FUNCTIONS:
 //   - unrollRing(rawRing)          antimeridian-safe copy of a ring
 //   - normalisePointTo(point, ring) moves a point into a ring's frame
+//   - pointInRing(point, ring)     even-odd ray cast, boundary = inside
 // ============================================================
 
 /**
@@ -61,4 +62,50 @@ export function normalisePointTo(point, ring) {
 
     const offset = Math.round((point.lng - mid) / 360) * 360;
     return { lat: point.lat, lng: point.lng - offset };
+}
+
+const ON_SEGMENT_EPS = 1e-9;
+
+/** True when `point` lies on the closed segment a-b (inclusive of endpoints). */
+function isOnSegment(point, a, b) {
+    const cross = (b.lng - a.lng) * (point.lat - a.lat) -
+                  (b.lat - a.lat) * (point.lng - a.lng);
+    if (Math.abs(cross) > ON_SEGMENT_EPS) return false;
+
+    const dot = (point.lng - a.lng) * (b.lng - a.lng) +
+                (point.lat - a.lat) * (b.lat - a.lat);
+    if (dot < 0) return false;
+
+    const lenSq = (b.lng - a.lng) ** 2 + (b.lat - a.lat) ** 2;
+    return dot <= lenSq;
+}
+
+/**
+ * Even-odd ray cast in the ring's own frame. Caller normalises first —
+ * this does not call normalisePointTo. Boundary points (on a vertex or
+ * an edge) count as inside. Winding order does not affect the result.
+ * @param {LatLng} point
+ * @param {Ring} ring
+ * @returns {boolean}
+ */
+export function pointInRing(point, ring) {
+    if (ring.length < 3) return false;
+
+    for (let i = 0; i < ring.length; i++) {
+        const a = ring[i];
+        const b = ring[(i + 1) % ring.length];
+        if (isOnSegment(point, a, b)) return true;
+    }
+
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i].lng, yi = ring[i].lat;
+        const xj = ring[j].lng, yj = ring[j].lat;
+        const crosses = (yi > point.lat) !== (yj > point.lat);
+        if (crosses) {
+            const xIntersect = (xj - xi) * (point.lat - yi) / (yj - yi) + xi;
+            if (point.lng < xIntersect) inside = !inside;
+        }
+    }
+    return inside;
 }

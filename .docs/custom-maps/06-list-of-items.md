@@ -94,4 +94,5 @@ overruns is visible as a conceptualization problem rather than a personal one.
 | 3 | 1 | Yes | mulberry32 in test/support/rng.js. Same-seed/different-seed/range tests all green. |
 | 4 | 1 | Yes | `test.yml` added (push+PR gate). `needs: test` across workflow files isn't valid GH Actions (needs only crosses jobs in the same workflow), so deploy.yml instead runs `npm ci` + `npm test` as steps before build — deploy still cannot go out red. Also switched `npm install`→`npm ci` in deploy.yml. |
 | 5 | 1 | Yes | `js/geo/polygon.js`: `unrollRing` walks the ring accumulating the minimal per-edge delta (`diff - round(diff/360)*360`); `normalisePointTo` shifts by whole multiples of 360 toward the ring's lng midpoint (`min+max)/2`). All contract cases green. |
+| 6 | 1 | Yes | `pointInRing`: explicit `isOnSegment` boundary check runs before the even-odd ray cast, so vertex/edge hits short-circuit to true and the `(yi>y)!==(yj>y)` form avoids the double-count on the diamond's ray-through-vertex row. All 8 contract cases green (30 tests total). |
 ```
