@@ -90,4 +90,5 @@ overruns is visible as a conceptualization problem rather than a personal one.
 | # | Evenings actually | Box held? | Note |
 |---|---|---|---|
 | 1 | 1 | Yes | npm i pulled vitest 3.2.7 against a `^4.0.4` peer from vitest-cucumber — npm's arborist errored (`edgesOut`) on a plain install; `--legacy-peer-deps` resolved it clean to vitest@4.1.11 throughout. |
+| 2 | 1 | Yes | Both failure modes observed: wrong Examples value fails with a clear expected/received diff; a commented-out `Then` step fails the whole file with "Missing steps in Scenario". Both reverted, suite green (2 files, 10 tests). |
 ```
