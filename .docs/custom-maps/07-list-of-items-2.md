@@ -90,4 +90,5 @@ one.
 ```
 | # | Evenings actually | Box held? | Note |
 |---|---|---|---|
+| 1 | 1 | Yes | New `CUSTOM_MAP` limits (`MIN_VERTICES: 3`, `MAX_VERTICES: 24`, `MIN_AREA_KM2: 25`) added alongside the existing `SAMPLE_ATTEMPTS`/`DENSIFY_STEP_DEG`. New `js/custom-draft.js`: `createDraft()` returns a closure over a private `points` array; `points` getter returns a mapped copy so external mutation of a snapshot can't touch draft state (tested directly — push onto a returned snapshot, assert the draft is unaffected). `addPoint` happy path always `{ ok: true }` for now — no validation yet, that's item 2. `undo` on empty is `Array.pop()` on an empty array, which is already a safe no-op in JS, so "no-op not a throw" held for free. 7 tests green, file at 55/150 lines, zero imports (DOM/Leaflet/state-free, per S05's exit criteria — verified early since item 3 is what actually checks this on the whole file). |
 ```

@@ -44,7 +44,10 @@ export const MAP_SETTINGS = {
 
 export const CUSTOM_MAP = {
     SAMPLE_ATTEMPTS: 60,   // rejection-sampling budget for randomPointInShape
-    DENSIFY_STEP_DEG: 2    // ~220km; boundary sampling step for diameterKm
+    DENSIFY_STEP_DEG: 2,   // ~220km; boundary sampling step for diameterKm
+    MIN_VERTICES: 3,       // fewer than this, a drawn ring cannot be a shape
+    MAX_VERTICES: 24,      // ringIsSimple is O(n^2); bounded for draw-time responsiveness
+    MIN_AREA_KM2: 25       // a 5km square; starting guess, see S05-draft-model.md item 1
 };
 
 /** Raw (non-unrolled) 4-corner bbox ring for a REGIONS entry. Deliberately
