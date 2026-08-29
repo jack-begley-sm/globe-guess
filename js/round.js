@@ -6,6 +6,7 @@
 //   - js/state.js       (reads/writes round state)
 //   - js/streetview.js  (initializes SV)
 //   - js/map.js         (handles guess map)
+//   - js/result-map.js  (shows the post-round result map)
 //   - js/scoring.js     (calculates round score)
 //   - js/custom-lobby.js (returnToDrawScreenWithMessage, for NoStreetViewInArea)
 //
@@ -20,7 +21,8 @@
 // ============================================================
 
 import { state, resetState } from './state.js';
-import { initMap, resetMap, submitGuess, showResultOnMap } from './map.js';
+import { initMap, resetMap, submitGuess } from './map.js';
+import { showResultOnMap } from './result-map.js';
 import { calculateScore } from './scoring.js';
 import { renderResults } from './results.js';
 import { getRandomLocation, initStreetView, NoStreetViewInArea } from './streetview.js';
@@ -48,7 +50,7 @@ export function startRound() {
     state.timerStart = Date.now();
 
     updateRoundUI();
-    resetMap();
+    resetMap(state.shape);
 
     // Use preloaded location if available, otherwise fetch now
     const locationPromise = nextLocationPromise || getRandomLocation(state.shape);
