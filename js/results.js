@@ -86,6 +86,21 @@ export function renderResults() {
 }
 
 // ── Solo award logic ───────────────────────────────────────────────────────────
+//
+// AUDIT (item 23, S04-regions-migrate.md): Sharpshooter, Globetrotter, On
+// Fire and Lost at Sea below threshold on a RAW km distance, calibrated by
+// eye to the old fixed 2000km-cutoff World game. Now that scoring is
+// relative to the play area (js/geo/shapes.js's scaleKm), these four no
+// longer mean the same thing in every region: 50km is a near-perfect guess
+// relative to WORLD's ~20015km scale but a fairly mediocre one relative to
+// UK's ~1171km scale, so "Sharpshooter" is too easy to earn in UK and too
+// hard in WORLD, and symmetrically for "Lost at Sea" at the 5000km end.
+// High Scorer and Consistent are unaffected — they key off score (already
+// relative) and the player's own average, not a fixed km figure.
+// NOT fixed here: the right replacement thresholds (e.g. some fraction of
+// state.shape.scaleKm) are a "how does it feel" decision, the same kind
+// item 24's manual playtest exists to make — picking numbers now would be
+// a guess. Revisit after that playtest.
 
 function calculateSoloAwards() {
     const scores = state.scores;
