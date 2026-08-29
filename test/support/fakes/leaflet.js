@@ -90,6 +90,13 @@ export function createLeafletFake() {
         marker: (...args) => makeLayer('marker', args),
         polyline: (...args) => makeLayer('polyline', args),
         divIcon: (opts) => ({ kind: 'divIcon', opts }),
+        // A real function, not an arrow one — production code calls this
+        // with `new`, which arrow functions can't support.
+        featureGroup: function (layers) {
+            this.kind = 'featureGroup';
+            this.layers = layers;
+            this.getBounds = () => ({});
+        },
         latLng: makeLatLng,
     };
 }

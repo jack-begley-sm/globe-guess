@@ -4,7 +4,7 @@
 //
 // DEPENDENCIES:
 //   - js/state.js       (reads scores)
-//   - js/map.js         (shows detail map in modal)
+//   - js/result-map.js  (shows detail map in modal)
 //   - js/awards.js      (persists solo awards)
 //   - js/user.js        (reads player name)
 //
@@ -18,9 +18,10 @@
 // ============================================================
 
 import { state, resetState } from './state.js';
-import { showResultOnMap } from './map.js';
+import { showResultOnMap } from './result-map.js';
 import { saveSoloAwards } from './awards.js';
 import { getUser } from './user.js';
+import { SCORING } from './config.js';
 
 export function initResults() {
     const playAgainBtn = document.getElementById('btn-play-again');
@@ -53,6 +54,13 @@ export function renderResults() {
 
     const totalScore = state.scores.reduce((sum, s) => sum + s.totalScore, 0);
     if (totalScoreEl) totalScoreEl.textContent = totalScore.toLocaleString();
+
+    const areaSummaryEl = document.getElementById('results-area-summary');
+    if (areaSummaryEl && state.shape) {
+        const scale = Math.round(state.shape.scaleKm);
+        const cutoff = Math.round(state.shape.scaleKm * SCORING.CUTOFF_RATIO);
+        areaSummaryEl.textContent = `Area: ${scale} km across — anything over ${cutoff} km scored zero`;
+    }
 
     if (resultsList) {
         resultsList.innerHTML = '';
