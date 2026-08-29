@@ -35,8 +35,13 @@ export const REGIONS = {
 export const MAX_SCORE = 5000;
 
 export const SCORING = {
-    CUTOFF_RATIO: 0.45,   // proportion of the play area's diameter beyond which score is 0
-    CURVE_EXPONENT: 2     // p in MAX_SCORE * (1 - r/CUTOFF_RATIO)^p; tuned at item 24
+    CUTOFF_RATIO: 0.45,     // proportion of the play area's diameter beyond which score is 0
+    CURVE_EXPONENT: 1.5     // p in MAX_SCORE * (1 - r/CUTOFF_RATIO)^p; shipped at 2 (item 24),
+                            // lowered to 1.5 after playing a small Custom area made the
+                            // quadratic drop-off feel too punishing on near misses — see
+                            // .docs/custom-maps/01-scoring-model.md's dated decision note.
+                            // CUTOFF_RATIO deliberately untouched: the ask was a smoother
+                            // falloff, not a more forgiving cutoff distance.
 };
 export const DEFAULT_ROUNDS = 5;
 export const DEFAULT_TIME_LIMIT = 90;

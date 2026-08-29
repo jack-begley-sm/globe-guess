@@ -17,7 +17,8 @@ score = MAX_SCORE * (1 - r / CUTOFF_RATIO)^p     when r <  CUTOFF_RATIO
 
 CUTOFF_RATIO = 0.45
 MAX_SCORE    = 5000        (unchanged)
-p            = SCORING.CURVE_EXPONENT, default 2
+p            = SCORING.CURVE_EXPONENT, shipped at 2, lowered to 1.5 — see
+               "Custom-mode playtest decision (2026-08-29)" below
 ```
 
 At `r = 0` the score is `MAX_SCORE`. At `r = 0.45` it is exactly 0 and the
@@ -138,6 +139,42 @@ and was left alone per this doc's own note; the awards audit (item 23,
 awards with now-stale absolute-km thresholds, deferred for the same reason
 `p` wasn't played in: choosing new numbers without playing first would be a
 guess dressed up as a decision.
+
+## Custom-mode playtest decision (2026-08-29)
+
+**`CURVE_EXPONENT` changes from `p = 2` to `p = 1.5`.** This is the revisit the
+Item 24 decision above called for — "informed by real play rather than a
+table" — after Jack played a solo Custom game in a small, tightly-drawn area
+("super duper central London") and found the quadratic drop-off too
+punishing: near misses (under a km) scored fine, but scores collapsed hard
+by 2-4 km even though the whole point of a hyper-local area is that a few
+km *is* still a reasonable guess.
+
+Two levers were on the table — `CUTOFF_RATIO` (how far out the zero-score
+cliff sits) and `CURVE_EXPONENT` (how sharply score falls off before it).
+Widening `CUTOFF_RATIO` was explicitly rejected: Jack's framing was "I want
+smoother not more forgiving" — the zero-point distance should stay exactly
+where it was, only the shape of the descent toward it should soften.
+`CUTOFF_RATIO` therefore stays at 0.45, unchanged since Item 24, and the
+"do not tune it by changing `CUTOFF_RATIO`" line further up still holds for
+the reason it always did: it's a single global constant shared by every
+region and every Custom shape alike, not something to special-case per mode.
+
+`p = 1.5` was chosen from a table of `p = 1.5 / 1.3 / 1` (linear) shown
+against % of the way to the cutoff distance, scale-independent so it applied
+equally to a tiny Custom area and to World. `p = 1.5` was picked as
+noticeably smoother without going all the way to a straight line, which
+would have lost the "extra reward for being extra close" curve shape
+entirely.
+
+Because `CURVE_EXPONENT` is global, this also softens every built-in
+region's scoring, not just Custom's — e.g. a 100 km UK miss goes from 3283
+to 3647, a 4000 km World miss from 1545 to 2072. That's a deliberate,
+accepted side effect of keeping one shared constant rather than forking the
+formula per shape type; every acceptance test with a `p`-dependent exact
+score (`region-scoring.feature`, `scoring-scale.feature`,
+`custom-solo-game.feature`) was recomputed against the real formula, not
+hand-copied, and re-verified green.
 
 ## Out-of-polygon guesses
 

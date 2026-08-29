@@ -3,13 +3,13 @@ Feature: Each region is scored against its own size
   Scenario: A 100 km miss in the UK is a worse guess than in the World
     Given a Classic game in the UK region
     When the player guesses 100 km from the location
-    Then they score 3283 points
-    And the same guess in the World region would score 4890 points
+    Then they score 3647 points
+    And the same guess in the World region would score 4917 points
 
   Scenario: A wrong-continent guess in a World game scores something, not nothing
     Given a Classic game in the World region
     When the player guesses 4000 km from the location
-    Then they score 1545 points
+    Then they score 2072 points
 
   Scenario: A guess more than 45% across the region scores nothing
     Given a Classic game in the UK region
@@ -25,5 +25,5 @@ Feature: Each region is scored against its own size
   Scenario: A Stitch Up setter is rewarded by the guesser's shortfall
     Given a Stitch Up round in the World region
     When the guesser lands 4000 km from the setter's location
-    Then the guesser scores 1545 points
-    And the setter scores 3455 points
+    Then the guesser scores 2072 points
+    And the setter scores 2928 points

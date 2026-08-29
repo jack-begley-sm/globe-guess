@@ -12,7 +12,7 @@ Feature: Playing a solo game in a custom area
   Scenario: Scores use the custom area's scale
     Given the player has drawn an area whose scale is 40 km
     When the player guesses 4 km from the location
-    Then they score 3025 points
+    Then they score 3430 points
 
   Scenario: A guess more than 45% across the custom area scores nothing
     Given the player has drawn an area whose scale is 40 km
@@ -28,8 +28,8 @@ Feature: Playing a solo game in a custom area
   Scenario: The speed bonus still applies
     Given a custom game with a 20 percent speed bonus and a 60 second limit
     When the player guesses 4 km from the location after 15 seconds
-    Then their base score is 3025
-    And their speed bonus is 454
+    Then their base score is 3430
+    And their speed bonus is 514
 
   Scenario: The results screen explains the area
     Given the player has finished a custom game
