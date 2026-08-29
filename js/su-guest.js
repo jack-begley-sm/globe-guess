@@ -18,6 +18,20 @@ const PeerJS = window.Peer;
 let suGuestPeer = null;
 let hostConn = null;
 
+/**
+ * Sets suState.region/shape from a peer-supplied region id, without
+ * crashing on one getShape doesn't recognise (a version-skewed host, or
+ * a future 'CUSTOM' id) — keeps the previous shape and logs instead.
+ */
+function applyRegionFromPeer(region) {
+    suState.region = region;
+    try {
+        suState.shape = getShape(region);
+    } catch (err) {
+        console.warn(`Stitch Up guest: unusable region '${region}' from peer`, err);
+    }
+}
+
 export function joinSuGame(roomCode, name) {
     saveSession({ roomCode, name, role: 'guest', mode: 'su' });
 
@@ -76,7 +90,7 @@ export function handleSuEvent(type, payload) {
                     suState.totalRounds = gs.totalRounds;
                     suState.currentSetter = gs.currentSetter;
                     suState.currentGuesser = gs.currentGuesser;
-                    if (gs.region) { suState.region = gs.region; suState.shape = getShape(gs.region); }
+                    if (gs.region) applyRegionFromPeer(gs.region);
                     
                     // Trigger UI transition if we are in the lobby/waiting
                     const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
@@ -160,7 +174,7 @@ function handleStartRound(data) {
     suState.currentSetter = data.setter;
     suState.currentGuesser = data.guesser;
     suState.totalRounds = data.totalRounds;
-    if (data.region) { suState.region = data.region; suState.shape = getShape(data.region); }
+    if (data.region) applyRegionFromPeer(data.region);
 
     // Hide all game screens
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -186,7 +200,7 @@ function handleGuesserPhase(data) {
         suState.currentSetter = data.setter;
         suState.currentGuesser = data.guesser;
         suState.totalRounds = data.totalRounds;
-        if (data.region) { suState.region = data.region; suState.shape = getShape(data.region); }
+        if (data.region) applyRegionFromPeer(data.region);
     }
 
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));

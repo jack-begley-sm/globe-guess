@@ -9,6 +9,7 @@ import { initSetterPhase } from './su-setter.js';
 import { initRoundReveal } from './su-results.js';
 import { saveSession, clearSession } from './user.js';
 import { requestWakeLock, releaseWakeLock } from './awake.js';
+import { setterScoreFromGuesserScore } from './scoring.js';
 
 let suHostPeer = null;
 let connections = {};
@@ -391,7 +392,7 @@ export async function handleGuesserSubmit(latLng, timeTaken) {
         }
     }
 
-    let setterScore = suState.autoPlaced ? 0 : (5000 - guesserScore);
+    let setterScore = setterScoreFromGuesserScore(guesserScore, suState.autoPlaced);
     // Optional cap
     // setterScore = Math.min(3000, setterScore);
 

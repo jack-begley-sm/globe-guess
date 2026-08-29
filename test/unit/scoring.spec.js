@@ -13,7 +13,7 @@
 //   - npm test
 // ============================================================
 import { describe, it, expect } from 'vitest';
-import { scoreFromDistance, calculateScore } from '../../js/scoring.js';
+import { scoreFromDistance, calculateScore, setterScoreFromGuesserScore } from '../../js/scoring.js';
 import { createRng } from '../support/rng.js';
 
 describe('scoreFromDistance', () => {
@@ -98,5 +98,16 @@ describe('calculateScore', () => {
     it('gives no speed bonus once time runs out, with scaleKm fixed', () => {
         const result = calculateScore(HERE, HERE, 90, 90, true, 20, 1000);
         expect(result.speedScore).toBe(0);
+    });
+});
+
+describe('setterScoreFromGuesserScore', () => {
+    it('is 5000 minus the guesser score, not auto-placed', () => {
+        expect(setterScoreFromGuesserScore(1545, false)).toBe(3455);
+    });
+
+    it('is 0 when auto-placed, regardless of guesser score', () => {
+        expect(setterScoreFromGuesserScore(1545, true)).toBe(0);
+        expect(setterScoreFromGuesserScore(0, true)).toBe(0);
     });
 });

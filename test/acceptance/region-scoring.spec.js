@@ -9,7 +9,7 @@
 //
 // DEPENDENCIES:
 //   - features/region-scoring.feature
-//   - js/scoring.js (calculateScore)
+//   - js/scoring.js (calculateScore, setterScoreFromGuesserScore)
 //   - js/geo/shapes.js (getShape)
 //
 // USED BY:
@@ -17,7 +17,7 @@
 // ============================================================
 import { loadFeature, describeFeature } from '@amiceli/vitest-cucumber';
 import { expect } from 'vitest';
-import { calculateScore } from '../../js/scoring.js';
+import { calculateScore, setterScoreFromGuesserScore } from '../../js/scoring.js';
 import { getShape } from '../../js/geo/shapes.js';
 
 const HOME = { lat: 0, lng: 0 };
@@ -95,8 +95,7 @@ describeFeature(feature, ({ Scenario }) => {
         Given('a Stitch Up round in the World region', () => {});
         When("the guesser lands 4000 km from the setter's location", () => {
             guesserScore = scoreAt(4000, getShape('WORLD').scaleKm);
-            // js/su-host.js:394's actual (non-auto-placed) formula.
-            setterScore = 5000 - guesserScore;
+            setterScore = setterScoreFromGuesserScore(guesserScore, false);
         });
         Then('the guesser scores 1545 points', () => {
             expect(guesserScore).toBe(1545);

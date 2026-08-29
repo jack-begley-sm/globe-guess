@@ -125,7 +125,14 @@ export function resumeInProgressRound(gameState) {
     vsState.currentRound = gameState.currentRound;
     vsState.totalRounds = gameState.totalRounds;
     vsState.region = gameState.region;
-    vsState.shape = getShape(vsState.region);
+    try {
+        vsState.shape = getShape(vsState.region);
+    } catch (err) {
+        // Peer-supplied region (e.g. a version-skewed host, or a future
+        // 'CUSTOM' id getShape doesn't recognise) must not crash a
+        // reconnect — keep the previous shape and log it instead.
+        console.warn(`resumeInProgressRound: unusable region '${vsState.region}' from peer`, err);
+    }
     vsState.currentLocation = gameState.currentLocation;
 
     initVsMap();

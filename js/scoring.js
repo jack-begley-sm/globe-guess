@@ -7,13 +7,15 @@
 //   - js/config.js      (MAX_SCORE, SCORING)
 //
 // USED BY:
-//   - js/round.js       (calculates score for each round — not yet
-//     migrated to pass scaleKm; throws until item 20)
+//   - js/round.js       (calculates score for each round)
+//   - js/vs-round.js    (host-side, per player, per round)
+//   - js/su-host.js     (guesser score; setter score derives from it)
 //
 // KEY FUNCTIONS:
 //   - calculateScore(guess, actual, time, limit, bonusEnabled, bonusPct, scaleKm)
 //   - distanceKm(lat1, lng1, lat2, lng2) haversine formula
 //   - scoreFromDistance(d, scaleKm) MAX_SCORE at d=0, 0 at 45% of scaleKm
+//   - setterScoreFromGuesserScore(guesserScore, autoPlaced) Stitch Up setter score
 // ============================================================
 
 import { MAX_SCORE, SCORING } from './config.js';
@@ -84,4 +86,17 @@ export function scoreFromDistance(d, scaleKm) {
     const r = d / scaleKm;
     if (r >= SCORING.CUTOFF_RATIO) return 0;
     return MAX_SCORE * Math.pow(1 - r / SCORING.CUTOFF_RATIO, SCORING.CURVE_EXPONENT);
+}
+
+/**
+ * Stitch Up setter score: rewarded by the guesser's shortfall — a more
+ * generous guesser curve makes a stingier setter, by design (see
+ * 01-scoring-model.md's "knock-on effects"). Auto-placed rounds give
+ * the setter nothing regardless of the guesser's score.
+ * @param {number} guesserScore
+ * @param {boolean} autoPlaced
+ * @returns {number}
+ */
+export function setterScoreFromGuesserScore(guesserScore, autoPlaced) {
+    return autoPlaced ? 0 : (MAX_SCORE - guesserScore);
 }
