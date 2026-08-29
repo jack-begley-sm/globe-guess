@@ -1,0 +1,12 @@
+diff --git a/node_modules/@capgo/capacitor-wifi/android/build.gradle b/node_modules/@capgo/capacitor-wifi/android/build.gradle
+index 541da1e..a4a75d2 100644
+--- a/node_modules/@capgo/capacitor-wifi/android/build.gradle
++++ b/node_modules/@capgo/capacitor-wifi/android/build.gradle
+@@ -44,7 +44,6 @@ android {
+ 
+ repositories {
+     google()
+-    jcenter()
+     mavenCentral()
+ }
+ 
