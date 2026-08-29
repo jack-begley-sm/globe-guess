@@ -21,6 +21,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { installLeafletFakeCapturingMap } from '../support/fakes/leaflet.js';
 import { initCustomDraw } from '../../js/custom-lobby.js';
+import { initLobby } from '../../js/lobby.js';
 
 function loadIndexBody() {
     const html = readFileSync('index.html', 'utf-8');
@@ -42,10 +43,17 @@ function resetWorld() {
     ({ L, getLastMap } = installLeafletFakeCapturingMap());
     loadIndexBody();
     initCustomDraw();
+    initLobby();
 }
 
+/** Custom is now a tile inside Classic's region grid, not its own
+ *  landing button — simulate already being in the Classic lobby (that
+ *  screen's own navigation from the landing tile is main.js's concern,
+ *  not this file's) and pick the grid's Custom tile from there. */
 function clickCustomTile() {
-    document.getElementById('btn-mode-custom').click();
+    document.getElementById('screen-landing').classList.add('hidden');
+    document.getElementById('screen-lobby').classList.remove('hidden');
+    document.querySelector('.region-grid button[data-region="CUSTOM"]').click();
 }
 
 function tapMap(lat, lng) {
@@ -157,7 +165,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
         });
     });
 
-    Scenario('Going back from the drawing map returns home', ({ Given, When, Then, And }) => {
+    Scenario('Going back from the drawing map returns to the game options', ({ Given, When, Then, And }) => {
         Given('the player is on the drawing map with two points tapped', () => {
             clickCustomTile();
             tapMap(51, 0);
@@ -166,8 +174,8 @@ describeFeature(feature, ({ Background, Scenario }) => {
         When('the player goes back', () => {
             document.getElementById('btn-custom-back').click();
         });
-        Then('the home screen is shown', () => {
-            expect(isHidden('screen-landing')).toBe(false);
+        Then('the game options screen is shown', () => {
+            expect(isHidden('screen-lobby')).toBe(false);
         });
         And('the drawing is discarded', () => {
             clickCustomTile(); // re-enter Custom
@@ -200,7 +208,9 @@ describe('Pressing START after confirming a Custom area', () => {
         initDraw();
         initLobby();
 
-        document.getElementById('btn-mode-custom').click();
+        document.getElementById('screen-landing').classList.add('hidden');
+        document.getElementById('screen-lobby').classList.remove('hidden');
+        document.querySelector('.region-grid button[data-region="CUSTOM"]').click();
         const map = getLastMap();
         map.fire('click', { latlng: L.latLng(51, 0) });
         map.fire('click', { latlng: L.latLng(52, 1) });

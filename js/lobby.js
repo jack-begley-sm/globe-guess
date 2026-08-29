@@ -7,6 +7,7 @@
 //   - js/user.js        (reads/writes player name)
 //   - js/round.js       (calls startGame)
 //   - js/geo/shapes.js  (getShape, to set state.shape alongside region)
+//   - js/custom-lobby.js (openCustomDraw, for the region grid's Custom tile)
 //
 // USED BY:
 //   - main.js           (initializes lobby events)
@@ -20,6 +21,7 @@ import { state } from './state.js';
 import { startGame } from './round.js';
 import { getUser, setUser } from './user.js';
 import { getShape } from './geo/shapes.js';
+import { openCustomDraw } from './custom-lobby.js';
 
 export function initLobby() {
     const startBtn = document.getElementById('btn-start-classic');
@@ -84,9 +86,28 @@ function setupGridSelection(className) {
         const btn = e.target.closest('button');
         if (!btn) return;
 
+        // Custom is a stage of its own, not an instant selection like the
+        // built-in regions — it opens the draw screen, and only becomes
+        // the active choice once an area is actually confirmed (handled
+        // in handleCustomAreaConfirmed, not here).
+        if (btn.dataset.region === 'CUSTOM') {
+            openCustomDraw('screen-lobby', handleCustomAreaConfirmed);
+            return;
+        }
+
         grid.querySelectorAll('button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     });
+}
+
+function handleCustomAreaConfirmed(shape) {
+    state.shape = shape;
+    state.region = 'CUSTOM';
+    document.getElementById('section-region').classList.add('hidden');
+
+    const summary = document.getElementById('custom-area-summary');
+    summary.textContent = `Custom area: about ${Math.round(shape.scaleKm)} km across`;
+    summary.classList.remove('hidden');
 }
 
 function handleStart() {
@@ -115,7 +136,7 @@ function handleStart() {
         : 0;
         
     // A confirmed Custom area already set state.region/state.shape and hid
-    // the region grid (js/custom-lobby.js's confirmArea) — the grid's own
+    // the region grid (handleCustomAreaConfirmed, above) — the grid's own
     // buttons are still in the DOM underneath it, so reading it
     // unconditionally here would silently throw the drawn area away and
     // replace it with whichever built-in region happens to be marked
