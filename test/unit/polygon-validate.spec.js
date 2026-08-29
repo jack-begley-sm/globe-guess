@@ -11,6 +11,7 @@
 // ============================================================
 import { describe, it, expect } from 'vitest';
 import { ringIsSimple } from '../../js/geo/polygon-validate.js';
+import { unrollRing } from '../../js/geo/polygon.js';
 
 const SQUARE = [{ lat: 0, lng: 0 }, { lat: 0, lng: 10 }, { lat: 10, lng: 10 }, { lat: 10, lng: 0 }];
 
@@ -63,5 +64,14 @@ describe('ringIsSimple', () => {
         expect(ringIsSimple([])).toBe(true);
         expect(ringIsSimple([{ lat: 0, lng: 0 }])).toBe(true);
         expect(ringIsSimple([{ lat: 0, lng: 0 }, { lat: 1, lng: 1 }])).toBe(true);
+    });
+
+    it('requires the unrolled frame — a raw antimeridian-crossing ring gives the wrong answer', () => {
+        // Edge 0 (170 -> -170) and edge 2 (175 -> -175) genuinely cross at
+        // lng 175 once unrolled; in the raw (wrapped) frame they don't
+        // appear to, because -170 and -175 read as far from 170/175.
+        const raw = [{ lat: 0, lng: 170 }, { lat: 0, lng: -170 }, { lat: 10, lng: 175 }, { lat: -10, lng: 175 }];
+        expect(ringIsSimple(raw)).toBe(true); // wrong answer on raw input — documents the trap
+        expect(ringIsSimple(unrollRing(raw))).toBe(false); // correct once unrolled
     });
 });

@@ -109,11 +109,15 @@ reject first. This is what game code calls.
 ### `ringIsSimple(ring) -> boolean`
 
 True when no two non-adjacent edges intersect. O(n²) segment intersection; `n <= 24`.
+Planar, so `ring` must already be unrolled — a raw ring crossing the antimeridian
+can give the wrong answer (a false negative or a missed self-crossing).
 
 - Square → true. Figure-eight → false.
 - Adjacent edges sharing a vertex → not an intersection.
 - Two vertices at the same coordinate → false (degenerate).
 - Three collinear points → true (allowed, just pointless).
+- A ring crossing the antimeridian, unrolled first → same answer as the
+  equivalent non-crossing ring shifted 180°.
 
 ### `ringBbox(ring) -> Bbox`
 

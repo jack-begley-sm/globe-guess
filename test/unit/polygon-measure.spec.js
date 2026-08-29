@@ -11,7 +11,7 @@
 //   - npm test
 // ============================================================
 import { describe, it, expect } from 'vitest';
-import { densifyRing, diameterKm, randomPointInShape } from '../../js/geo/polygon-measure.js';
+import { densifyRing, diameterKm, randomPointInShape, areaKm2 } from '../../js/geo/polygon-measure.js';
 import { unrollRing, ringBbox, containsPoint } from '../../js/geo/polygon.js';
 import { REGIONS, CUSTOM_MAP } from '../../js/config.js';
 import { createRng } from '../support/rng.js';
@@ -60,8 +60,13 @@ describe('densifyRing', () => {
 
     it('never returns the closing duplicate (a copy of the first vertex at the end)', () => {
         const out = densifyRing(SQUARE, 3);
-        const last = out[out.length - 1];
-        expect(last).not.toEqual(SQUARE[0]);
+        const occurrences = out.filter((p) => p.lat === SQUARE[0].lat && p.lng === SQUARE[0].lng).length;
+        expect(occurrences).toBe(1);
+    });
+
+    it('throws for a non-positive stepDeg instead of looping forever', () => {
+        expect(() => densifyRing(SQUARE, 0)).toThrow();
+        expect(() => densifyRing(SQUARE, -1)).toThrow();
     });
 
     it('handles a two-vertex degenerate ring by densifying both traversal directions', () => {
@@ -75,6 +80,14 @@ describe('densifyRing', () => {
 
 describe('diameterKm', () => {
     it('is ~20015km for the WORLD region, not the ~14455km vertex-only figure', () => {
+        // Deliberately the RAW bbox ring, NOT passed through unrollRing:
+        // WORLD's lng span is exactly 360 degrees, which unrollRing
+        // collapses to a degenerate zero-width ring (every vertex lands
+        // on the same meridian) — see 01-scoring-model.md's own worked
+        // example, which treats -180 and 180 as distinct boundary points.
+        // Item 14 (js/geo/shapes.js) MUST NOT call unrollRing on WORLD's
+        // ring for this reason; other built-in regions don't cross the
+        // antimeridian so this doesn't apply to them.
         const km = diameterKm(bboxRing(REGIONS.WORLD), 2);
         expect(km).toBeGreaterThan(19995);
         expect(km).toBeLessThan(20035);
@@ -87,16 +100,14 @@ describe('diameterKm', () => {
         ['AFRICA', 10783],
         ['ASIA', 13260],
         ['OCEANIA', 7684],
-    ])('is ~%skm for the %s region (within 20km)', (name, expectedKm) => {
+    ])('the %s region has scale ~%skm (within 20km)', (name, expectedKm) => {
         const km = diameterKm(bboxRing(REGIONS[name]), 2);
         expect(Math.abs(km - expectedKm)).toBeLessThanOrEqual(20);
     });
 
-    it('handles a two-vertex degenerate ring', () => {
+    it('handles a two-vertex degenerate ring as the exact distance between them', () => {
         const ring = [{ lat: 0, lng: 0 }, { lat: 0, lng: 10 }];
-        const km = diameterKm(ring, 2);
-        expect(km).toBeGreaterThan(1000);
-        expect(km).toBeLessThan(1200);
+        expect(diameterKm(ring, 2)).toBeCloseTo(1111.95, 1);
     });
 
     it('never decreases when a vertex further out is added', () => {
@@ -150,5 +161,18 @@ describe('randomPointInShape', () => {
         const point = randomPointInShape(sliver, rng);
         expect(point).toBeNull();
         expect(calls).toBe(CUSTOM_MAP.SAMPLE_ATTEMPTS * 2);
+    });
+});
+
+describe('areaKm2', () => {
+    it('is ~700000km2 for the UK bbox (within 10%)', () => {
+        const km2 = areaKm2(bboxRing(REGIONS.UK));
+        expect(Math.abs(km2 - 700000)).toBeLessThanOrEqual(70000);
+    });
+
+    it('is 0 for a degenerate (fewer than 3 vertex) ring', () => {
+        expect(areaKm2([])).toBe(0);
+        expect(areaKm2([{ lat: 0, lng: 0 }])).toBe(0);
+        expect(areaKm2([{ lat: 0, lng: 0 }, { lat: 1, lng: 1 }])).toBe(0);
     });
 });

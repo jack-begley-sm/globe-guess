@@ -17,6 +17,7 @@
 //   - densifyRing(ring, stepDeg)        boundary sample, closing edge included
 //   - diameterKm(ring, stepDeg)         max pairwise great-circle distance
 //   - randomPointInShape(shape, rng)    rejection sampling, null on exhaustion
+//   - areaKm2(ring)                     approx area, for the min-size guard only
 // ============================================================
 import { containsPoint } from './polygon.js';
 import { CUSTOM_MAP } from '../config.js';
@@ -33,6 +34,10 @@ import { CUSTOM_MAP } from '../config.js';
  * @returns {import('./polygon.js').Ring}
  */
 export function densifyRing(ring, stepDeg) {
+    if (!(stepDeg > 0)) {
+        throw new Error(`densifyRing: stepDeg must be > 0, got ${stepDeg}`);
+    }
+
     const n = ring.length;
     const out = [];
 
@@ -104,4 +109,33 @@ export function randomPointInShape(shape, rng = Math.random) {
         if (containsPoint(point, shape)) return point;
     }
     return null;
+}
+
+const KM_PER_DEG_LAT = 110.574;
+const KM_PER_DEG_LNG_AT_EQUATOR = 111.320;
+
+/**
+ * Approximate area via the shoelace formula on an equirectangular
+ * projection (lng scaled by cos of the ring's mean latitude). Good
+ * enough for the "your area is too small" guard — never used for
+ * scoring. Deliberately not spherical-excess; see 02-geometry-contracts.md
+ * for the ±10% tolerance this trades for simplicity.
+ * @param {import('./polygon.js').Ring} ring
+ * @returns {number} square kilometres
+ */
+export function areaKm2(ring) {
+    if (ring.length < 3) return 0;
+
+    const meanLat = ring.reduce((sum, p) => sum + p.lat, 0) / ring.length;
+    const kmPerDegLng = KM_PER_DEG_LNG_AT_EQUATOR * Math.cos((meanLat * Math.PI) / 180);
+
+    let sum = 0;
+    for (let i = 0; i < ring.length; i++) {
+        const a = ring[i];
+        const b = ring[(i + 1) % ring.length];
+        const ax = a.lng * kmPerDegLng, ay = a.lat * KM_PER_DEG_LAT;
+        const bx = b.lng * kmPerDegLng, by = b.lat * KM_PER_DEG_LAT;
+        sum += ax * by - bx * ay;
+    }
+    return Math.abs(sum) / 2;
 }

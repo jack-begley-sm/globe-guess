@@ -196,7 +196,10 @@ describe('containsPoint', () => {
     it('bbox fast path agrees with the full ray cast over 5000 random points on 20 random rings', () => {
         const rng = createRng(20240601);
         const randomRing = () => {
-            const cx = rng() * 100 - 50, cy = rng() * 100 - 50;
+            // cx spans +-200 (not +-50) so some rings land with an
+            // unrolled bbox.east > 180 — the frame the bbox fast path is
+            // most likely to get wrong, per the item 7-11 review.
+            const cx = rng() * 400 - 200, cy = rng() * 100 - 50;
             const n = 3 + Math.floor(rng() * 6);
             const angles = Array.from({ length: n }, () => rng() * 2 * Math.PI).sort((a, b) => a - b);
             return unrollRing(angles.map((a) => ({
@@ -209,7 +212,7 @@ describe('containsPoint', () => {
             const ring = randomRing();
             const shape = shapeOf(ring);
             for (let i = 0; i < 250; i++) {
-                const point = { lat: rng() * 160 - 80, lng: rng() * 160 - 80 };
+                const point = { lat: rng() * 160 - 80, lng: rng() * 400 - 200 };
                 const viaBbox = containsPoint(point, shape);
                 const raw = pointInRing(normalisePointTo(point, ring), ring);
                 expect(viaBbox).toBe(raw);

@@ -53,7 +53,10 @@ function segmentsIntersect(p1, p2, p3, p4) {
  * vertices share a coordinate. Adjacent edges (sharing a vertex,
  * including the closing edge) are never tested against each other.
  * O(n^2); ring lengths here are bounded by CUSTOM_MAP.MAX_VERTICES (24).
- * @param {import('./polygon.js').Ring} ring
+ * Precondition: `ring` is already unrolled (see unrollRing in
+ * polygon.js) — this is planar and frame-dependent, so a raw ring that
+ * crosses the antimeridian can give the wrong answer.
+ * @param {import('./polygon.js').Ring} ring - already unrolled
  * @returns {boolean}
  */
 export function ringIsSimple(ring) {
