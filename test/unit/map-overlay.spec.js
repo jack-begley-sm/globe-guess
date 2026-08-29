@@ -13,7 +13,7 @@
 // ============================================================
 import { describe, it, expect, beforeEach } from 'vitest';
 import { installLeafletFake } from '../support/fakes/leaflet.js';
-import { drawShapeOverlay, guardClick } from '../../js/map-overlay.js';
+import { drawShapeOverlay, guardClick, fitMapToShape } from '../../js/map-overlay.js';
 import { getShape, makeCustomShape } from '../../js/geo/shapes.js';
 
 let L;
@@ -92,5 +92,37 @@ describe('guardClick', () => {
         const guarded = guardClick(() => null, () => { called = true; });
         guarded({ latlng: L.latLng(0, 0) });
         expect(called).toBe(true);
+    });
+});
+
+describe('fitMapToShape', () => {
+    it('fits the view to the shape bbox and bounds panning around it', () => {
+        const map = L.map('guess-map', {});
+        const shape = getShape('UK');
+        fitMapToShape(map, shape);
+
+        expect(map._fitBounds).toEqual([
+            [shape.bbox.south, shape.bbox.west],
+            [shape.bbox.north, shape.bbox.east],
+        ]);
+        expect(map._maxBounds).toBeDefined();
+        const [[maxSouth, maxWest], [maxNorth, maxEast]] = map._maxBounds;
+        // The max bounds are a real margin outside the shape, not the
+        // shape's own bbox verbatim — otherwise "bounded" means "can't
+        // move the map at all".
+        expect(maxSouth).toBeLessThan(shape.bbox.south);
+        expect(maxWest).toBeLessThan(shape.bbox.west);
+        expect(maxNorth).toBeGreaterThan(shape.bbox.north);
+        expect(maxEast).toBeGreaterThan(shape.bbox.east);
+    });
+
+    it('gives a small custom area a sensible margin too, not a fixed degree count', () => {
+        const map = L.map('guess-map', {});
+        const tiny = makeCustomShape([{ lat: 51.0, lng: 0.0 }, { lat: 51.01, lng: 0.0 }, { lat: 51.0, lng: 0.01 }]);
+        fitMapToShape(map, tiny);
+        const [[maxSouth], , ] = [map._maxBounds[0]];
+        const margin = tiny.bbox.south - maxSouth;
+        expect(margin).toBeGreaterThan(0);
+        expect(margin).toBeLessThan(1); // proportional to the tiny shape, not a flat 1deg-plus pad
     });
 });

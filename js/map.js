@@ -21,7 +21,7 @@
 
 import { state } from './state.js';
 import { MAP_SETTINGS } from './config.js';
-import { drawShapeOverlay, guardClick } from './map-overlay.js';
+import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let map;
 let resultMiniMap;
@@ -100,10 +100,7 @@ export function resetMap(shape) {
     }
     if (map && shape) {
         currentOverlay = drawShapeOverlay(map, shape);
-        map.fitBounds(
-            [[shape.bbox.south, shape.bbox.west], [shape.bbox.north, shape.bbox.east]],
-            { padding: [20, 20] }
-        );
+        fitMapToShape(map, shape);
     }
     state.guessLatLng = null;
     document.getElementById('btn-submit-guess').disabled = true;

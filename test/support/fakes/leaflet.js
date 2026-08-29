@@ -75,7 +75,8 @@ function makeMap(container, opts) {
             return this;
         },
         invalidateSize() { return this; },
-        fitBounds() { return this; },
+        fitBounds(bounds) { this._fitBounds = bounds; return this; },
+        setMaxBounds(bounds) { this._maxBounds = bounds; return this; },
     };
 }
 

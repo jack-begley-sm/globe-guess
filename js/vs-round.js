@@ -6,7 +6,7 @@ import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
 import { getShape } from './geo/shapes.js';
-import { drawShapeOverlay, guardClick } from './map-overlay.js';
+import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let timerInterval;
 let autoAdvanceTimeout;
@@ -350,7 +350,7 @@ function placeVsMarker(latlng) {
     document.getElementById('btn-vs-submit-guess').disabled = false;
 }
  
-function resetVsMap() {
+export function resetVsMap() {
     isMapLocked = false;
 
     unlockStreetView('vs-street-view-container');
@@ -365,8 +365,7 @@ function resetVsMap() {
     }
     if (vsMap && vsState.shape) {
         vsMapOverlay = drawShapeOverlay(vsMap, vsState.shape);
-        const { south, west, north, east } = vsState.shape.bbox;
-        vsMap.fitBounds([[south, west], [north, east]], { padding: [20, 20] });
+        fitMapToShape(vsMap, vsState.shape);
     }
     vsState.currentGuessLatLng = null;
     document.getElementById('btn-vs-submit-guess').disabled = true;

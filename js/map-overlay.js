@@ -19,6 +19,8 @@
 //     no-op for WORLD (dimming nothing is the correct render)
 //   - guardClick(getShape, handler)  wraps a click handler so a tap
 //     outside the shape never reaches it
+//   - fitMapToShape(map, shape)      fits the view to the shape and
+//     bounds panning/zoom so it can't be scrolled off screen entirely
 // ============================================================
 import { containsPoint } from './geo/polygon.js';
 
@@ -70,4 +72,21 @@ export function guardClick(getShape, handler) {
         }
         handler(e);
     };
+}
+
+/**
+ * Fits the view to `shape`'s bbox and bounds panning to a margin
+ * around it, so a player can't scroll the whole play area off screen.
+ * A fixed fraction of the bbox's own size, not a fixed degree count —
+ * a UK-sized area and a 5km custom one both get a sensible margin.
+ * @param {object} map
+ * @param {import('./geo/polygon.js').Shape} shape
+ */
+export function fitMapToShape(map, shape) {
+    const { south, west, north, east } = shape.bbox;
+    map.fitBounds([[south, west], [north, east]], { padding: [20, 20] });
+
+    const latPad = (north - south) * 0.2 || 1;
+    const lngPad = (east - west) * 0.2 || 1;
+    map.setMaxBounds([[south - latPad, west - lngPad], [north + latPad, east + lngPad]]);
 }

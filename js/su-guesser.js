@@ -9,7 +9,7 @@
 import { suState } from './su-state.js';
 import { sendSuData } from './su-guest.js';
 import { setVsStreetView } from './streetview.js';
-import { drawShapeOverlay, guardClick } from './map-overlay.js';
+import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let guessMap = null;
 let guessMarker = null;
@@ -73,7 +73,10 @@ function initGuessMap() {
     // This map is rebuilt fresh every turn (see the `guessMap.remove()`
     // above), so the overlay never needs explicit cleanup — it goes with
     // the rest of the map instance.
-    if (suState.shape) drawShapeOverlay(guessMap, suState.shape);
+    if (suState.shape) {
+        drawShapeOverlay(guessMap, suState.shape);
+        fitMapToShape(guessMap, suState.shape);
+    }
 
     guessMarker = null;
     currentGuess = null;
