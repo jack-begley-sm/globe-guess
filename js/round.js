@@ -32,7 +32,7 @@ export function startGame() {
     state.currentRound = 0;
     state.scores = [];
     initMap();  // ← must be before startRound
-    nextLocationPromise = getRandomLocation(state.region);
+    nextLocationPromise = getRandomLocation(state.shape);
     startRound();
 }
 
@@ -49,7 +49,7 @@ export function startRound() {
     resetMap();
 
     // Use preloaded location if available, otherwise fetch now
-    const locationPromise = nextLocationPromise || getRandomLocation(state.region);
+    const locationPromise = nextLocationPromise || getRandomLocation(state.shape);
     nextLocationPromise = null;
 
     locationPromise.then((location) => {
@@ -57,11 +57,11 @@ export function startRound() {
         state.currentLocation = location;
 
         // Load panorama from already-found pano ID — no API search needed
-        return initStreetView(state.region, location.lat, location.lng)
+        return initStreetView(state.shape, location.lat, location.lng)
     }).then(() => {
         // Start pre-fetching next round in background while user plays
         if (state.currentRound < state.totalRounds) {
-            nextLocationPromise = getRandomLocation(state.region);
+            nextLocationPromise = getRandomLocation(state.shape);
         }
         startTimer();
     }).catch(err => {

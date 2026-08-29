@@ -3,22 +3,22 @@
 // PURPOSE: Google Street View integration and random location generation.
 //
 // DEPENDENCIES:
-//   - js/config.js      (REGIONS)
-//   - js/state.js       (writes currentLocation)
+//   - js/state.js               (writes currentLocation)
+//   - js/geo/polygon-measure.js (randomPointInShape)
 //
 // USED BY:
 //   - js/round.js       (initializes street view for each round)
 //
 // KEY FUNCTIONS:
-//   - initStreetView(region)         orchestrates location finding and SV loading
-//   - preloadGoogleMaps()            loads Maps API on app start
-//   - getRandomLocation(regionName)  returns random location coords (no pano ID)
-//   - setVsStreetView(pano, id)      sets SV to specific pano for VS mode
-//   - resizeVisiblePanoramas()       forces all visible panoramas to recompute size
+//   - initStreetView(shape)         orchestrates location finding and SV loading
+//   - preloadGoogleMaps()           loads Maps API on app start
+//   - getRandomLocation(shape)      returns random location coords (no pano ID)
+//   - setVsStreetView(pano, id)     sets SV to specific pano for VS mode
+//   - resizeVisiblePanoramas()      forces all visible panoramas to recompute size
 // ============================================================
 
-import { REGIONS } from './config.js';
 import { state } from './state.js';
+import { randomPointInShape } from './geo/polygon-measure.js';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -101,7 +101,7 @@ function loadGoogleMaps(callback) {
 // MAIN ENTRY POINTS
 // ─────────────────────────────────────────────────────────────
 
-export function initStreetView(regionName, knownLat = null, knownLng = null) {
+export function initStreetView(shape, knownLat = null, knownLng = null) {
     const container = document.getElementById('street-view-container');
     if (!container) return Promise.reject('No street-view-container found');
 
@@ -114,8 +114,7 @@ export function initStreetView(regionName, knownLat = null, knownLng = null) {
                     (data) => {
                         if (!data) {
                             // Preloaded coords found nothing — fall back to full search
-                            const region = REGIONS[regionName] || REGIONS.WORLD;
-                            tryRandomLocation(region, 0, resolve, reject);
+                            tryRandomLocation(shape, 0, resolve, reject);
                             return;
                         }
                         const pos = data.location.latLng;
@@ -129,16 +128,14 @@ export function initStreetView(regionName, knownLat = null, knownLng = null) {
                             resolve,
                             () => {
                                 // Panorama was a photosphere — retry full search
-                                const region = REGIONS[regionName] || REGIONS.WORLD;
-                                tryRandomLocation(region, 0, resolve, reject);
+                                tryRandomLocation(shape, 0, resolve, reject);
                             }
                         );
                     },
                     reject
                 );
             } else {
-                const region = REGIONS[regionName] || REGIONS.WORLD;
-                tryRandomLocation(region, 0, resolve, reject);
+                tryRandomLocation(shape, 0, resolve, reject);
             }
         };
 
@@ -214,10 +211,9 @@ export function setVsStreetView(pano, containerId, onReady) {
 }
 
 // Returns coords only — no pano ID to avoid stale IDs between rounds
-export function getRandomLocation(regionName) {
-    const region = REGIONS[regionName] || REGIONS.WORLD;
+export function getRandomLocation(shape) {
     return new Promise((resolve, reject) => {
-        const proceed = () => findValidCoords(region, 0, resolve, reject);
+        const proceed = () => findValidCoords(shape, 0, resolve, reject);
         if (!isLibraryLoaded) {
             loadGoogleMaps(proceed);
         } else {
@@ -230,17 +226,22 @@ export function getRandomLocation(regionName) {
 // LOCATION FINDING
 // ─────────────────────────────────────────────────────────────
 
-function tryRandomLocation(region, attempt, resolve, reject) {
+function tryRandomLocation(shape, attempt, resolve, reject) {
     if (attempt >= 20) {
         reject(new Error('Failed to find valid Street View after 20 attempts'));
         return;
     }
 
-    const randomLoc = generateRandomLatLng(region);
+    const randomLoc = randomPointInShape(shape);
+    if (!randomLoc) {
+        // Sampling budget exhausted for this attempt (a thin shape) — try again.
+        tryRandomLocation(shape, attempt + 1, resolve, reject);
+        return;
+    }
 
     findNearestOutdoor(randomLoc, (data) => {
         if (!data) {
-            tryRandomLocation(region, attempt + 1, resolve, reject);
+            tryRandomLocation(shape, attempt + 1, resolve, reject);
             return;
         }
 
@@ -254,24 +255,28 @@ function tryRandomLocation(region, attempt, resolve, reject) {
             () => {
                 // Photosphere detected after render — retry with new location
                 console.log('Retrying — photosphere detected after render');
-                tryRandomLocation(region, attempt + 1, resolve, reject);
+                tryRandomLocation(shape, attempt + 1, resolve, reject);
             }
         );
     }, reject);
 }
 
 // Find valid coords for preloading (returns lat/lng only, no pano)
-function findValidCoords(region, attempt, resolve, reject) {
+function findValidCoords(shape, attempt, resolve, reject) {
     if (attempt >= 20) {
         reject(new Error('Could not find valid Street View coords'));
         return;
     }
 
-    const randomLoc = generateRandomLatLng(region);
+    const randomLoc = randomPointInShape(shape);
+    if (!randomLoc) {
+        findValidCoords(shape, attempt + 1, resolve, reject);
+        return;
+    }
 
     findNearestOutdoor(randomLoc, (data) => {
         if (!data) {
-            findValidCoords(region, attempt + 1, resolve, reject);
+            findValidCoords(shape, attempt + 1, resolve, reject);
             return;
         }
         const pos = data.location.latLng;
@@ -398,17 +403,6 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         }
     }, 4000);
 }
-
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
-
-function generateRandomLatLng(region) {
-    const lat = Math.random() * (region.lat[1] - region.lat[0]) + region.lat[0];
-    const lng = Math.random() * (region.lng[1] - region.lng[0]) + region.lng[0];
-    return { lat, lng };
-}
-
 
 // ─────────────────────────────────────────────────────────────
 // VIEWPORT RESIZE HANDLING (iOS Safari dynamic toolbar)
