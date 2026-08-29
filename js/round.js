@@ -115,12 +115,13 @@ export function endRound() {
     
     const guess = submitGuess();
     const result = calculateScore(
-        guess, 
-        state.currentLocation, 
-        timeTaken, 
-        state.timeLimit, 
-        state.speedBonusPct > 0, 
-        state.speedBonusPct
+        guess,
+        state.currentLocation,
+        timeTaken,
+        state.timeLimit,
+        state.speedBonusPct > 0,
+        state.speedBonusPct,
+        state.shape.scaleKm
     );
 
     state.scores.push({

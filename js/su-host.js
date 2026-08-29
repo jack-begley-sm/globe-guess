@@ -382,7 +382,7 @@ export async function handleGuesserSubmit(latLng, timeTaken) {
     let guesserScore = 0;
     
     if (latLng) {
-        const scoreObj = calculateScore(latLng, suState.confirmedLatLng, 0, 0, false, 0);
+        const scoreObj = calculateScore(latLng, suState.confirmedLatLng, 0, 0, false, 0, suState.shape.scaleKm);
         distance = scoreObj.distanceKm;
         guesserScore = scoreObj.totalScore;
         

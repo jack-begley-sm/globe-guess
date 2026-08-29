@@ -39,8 +39,7 @@ export const DEFAULT_TIME_LIMIT = 90;
 export const DEFAULT_SPEED_BONUS_PCT = 20;
 
 export const MAP_SETTINGS = {
-    INITIAL_ZOOM: 2,
-    MAX_GUESS_DISTANCE: 2000 // km for zero score
+    INITIAL_ZOOM: 2
 };
 
 export const CUSTOM_MAP = {

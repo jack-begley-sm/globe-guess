@@ -413,7 +413,8 @@ export function onAllGuessesReceived() {
             player.lastTimeTaken || 0,
             180,
             false,
-            0
+            0,
+            vsState.shape.scaleKm
         );
         
         player.scores[vsState.currentRound - 1] = result.totalScore;
