@@ -8,6 +8,8 @@
 // DEPENDENCIES:
 //   - js/geo/polygon.js (unrollRing)
 //   - js/geo/polygon-validate.js (pathIsSimple)
+//   - js/geo/polygon-measure.js (areaKm2)
+//   - js/geo/shapes.js (makeCustomShape)
 //   - js/config.js (CUSTOM_MAP)
 //
 // USED BY:
@@ -18,6 +20,8 @@
 // ============================================================
 import { unrollRing } from './geo/polygon.js';
 import { pathIsSimple } from './geo/polygon-validate.js';
+import { areaKm2 } from './geo/polygon-measure.js';
+import { makeCustomShape } from './geo/shapes.js';
 import { CUSTOM_MAP } from './config.js';
 
 /**
@@ -66,10 +70,38 @@ export function createDraft() {
         points = [];
     }
 
+    /**
+     * @returns {{ canClose: boolean, reason?: string, vertexCount: number }}
+     */
+    function status() {
+        const vertexCount = points.length;
+
+        if (vertexCount < CUSTOM_MAP.MIN_VERTICES) {
+            return { canClose: false, reason: 'TOO_FEW', vertexCount };
+        }
+
+        const unrolled = unrollRing(points);
+        if (areaKm2(unrolled) < CUSTOM_MAP.MIN_AREA_KM2) {
+            return { canClose: false, reason: 'TOO_SMALL', vertexCount };
+        }
+
+        return { canClose: true, vertexCount };
+    }
+
+    /** @returns {import('./geo/polygon.js').Shape} */
+    function close() {
+        if (!status().canClose) {
+            throw new Error('Draft.close: cannot close, canClose is false');
+        }
+        return makeCustomShape(points);
+    }
+
     return {
         addPoint,
         undo,
         clear,
+        status,
+        close,
         get points() {
             return points.map((p) => ({ lat: p.lat, lng: p.lng }));
         },

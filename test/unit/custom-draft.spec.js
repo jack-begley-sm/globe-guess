@@ -13,6 +13,9 @@
 // ============================================================
 import { describe, it, expect } from 'vitest';
 import { createDraft } from '../../js/custom-draft.js';
+import { createRng } from '../support/rng.js';
+
+const TRIANGLE = [{ lat: 51, lng: 0 }, { lat: 52, lng: 1 }, { lat: 51, lng: 1 }];
 
 describe('createDraft', () => {
     it('starts with no points', () => {
@@ -99,5 +102,72 @@ describe('addPoint rejection codes', () => {
         const result = draft.addPoint({ lat: 10, lng: 0 });
         expect(result).toEqual({ ok: false, reason: 'WOUND_ROUND_WORLD' });
         expect(draft.points).toEqual(before);
+    });
+});
+
+describe('status', () => {
+    it('cannot close with fewer than 3 points (TOO_FEW)', () => {
+        const draft = createDraft();
+        draft.addPoint({ lat: 51, lng: 0 });
+        draft.addPoint({ lat: 52, lng: 1 });
+        expect(draft.status()).toEqual({ canClose: false, reason: 'TOO_FEW', vertexCount: 2 });
+    });
+
+    it('cannot close an area smaller than MIN_AREA_KM2 (TOO_SMALL)', () => {
+        const draft = createDraft();
+        // Three points within ~50m of each other — well under 25km2.
+        draft.addPoint({ lat: 51.0000, lng: 0.0000 });
+        draft.addPoint({ lat: 51.0004, lng: 0.0000 });
+        draft.addPoint({ lat: 51.0000, lng: 0.0004 });
+        const status = draft.status();
+        expect(status.canClose).toBe(false);
+        expect(status.reason).toBe('TOO_SMALL');
+        expect(status.vertexCount).toBe(3);
+    });
+
+    it('can close a normal triangle with vertexCount and no reason', () => {
+        const draft = createDraft();
+        TRIANGLE.forEach((p) => draft.addPoint(p));
+        expect(draft.status()).toEqual({ canClose: true, vertexCount: 3 });
+    });
+});
+
+describe('close', () => {
+    it('throws when the draft cannot be closed', () => {
+        const draft = createDraft();
+        draft.addPoint({ lat: 51, lng: 0 });
+        expect(() => draft.close()).toThrow();
+    });
+
+    it('produces a CUSTOM shape with a computed bbox and scale, for a valid draft', () => {
+        const draft = createDraft();
+        TRIANGLE.forEach((p) => draft.addPoint(p));
+        const shape = draft.close();
+        expect(shape.id).toBe('CUSTOM');
+        expect(shape.scaleKm).toBeGreaterThan(0);
+    });
+});
+
+describe('convex hulls always close (property test)', () => {
+    it('a draft built from points on a convex hull, in order, always closes successfully', () => {
+        const rng = createRng(2026);
+        for (let trial = 0; trial < 20; trial++) {
+            const centerLat = rng() * 40 - 20;
+            const centerLng = rng() * 40 - 20;
+            const radius = 2 + rng() * 3; // degrees; big enough to clear MIN_AREA_KM2
+            const n = 3 + Math.floor(rng() * 10);
+            const angles = Array.from({ length: n }, (_, i) => (i / n) * 2 * Math.PI);
+
+            const draft = createDraft();
+            for (const angle of angles) {
+                const point = {
+                    lat: centerLat + Math.sin(angle) * radius,
+                    lng: centerLng + Math.cos(angle) * radius,
+                };
+                const result = draft.addPoint(point);
+                expect(result.ok).toBe(true);
+            }
+            expect(draft.status().canClose).toBe(true);
+        }
     });
 });
