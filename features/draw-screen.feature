@@ -35,8 +35,8 @@ Feature: Choosing a custom area before a solo game
     Then the game options screen is shown
     And the options screen shows the chosen area instead of the region grid
 
-  Scenario: Going back from the drawing map returns home
+  Scenario: Going back from the drawing map returns to the game options
     Given the player is on the drawing map with two points tapped
     When the player goes back
-    Then the home screen is shown
+    Then the game options screen is shown
     And the drawing is discarded

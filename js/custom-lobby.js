@@ -1,27 +1,30 @@
 // ============================================================
 // FILE: js/custom-lobby.js
-// PURPOSE: Wires the Custom-mode draw screen's buttons, maps drawing
-//          rejection reasons to English hint text, and hands the
-//          confirmed area into the Classic lobby's game options. See
+// PURPOSE: Generic Custom-area draw-screen engine — wires the drawing
+//          buttons and maps rejection reasons to English hints, but
+//          decides nothing about what a confirmed area means. Any mode
+//          (Classic today; VS/Co-op/Stitch Up once S10/S11 land) opens
+//          it by calling openCustomDraw() and owns its own reaction to
+//          the result via the onConfirm callback it supplies. See
 //          .docs/custom-maps/05-conceptualization/S06-draw-screen.md.
 //
 // DEPENDENCIES:
 //   - js/custom-draft.js (createDraft)
 //   - js/custom-map.js (initCustomMap)
-//   - js/state.js (writes state.shape / state.region on confirm)
 //
 // USED BY:
-//   - main.js (calls initCustomDraw() at startup, and shows the draw
-//     screen when the landing tile is clicked)
+//   - main.js (calls initCustomDraw() at startup)
+//   - js/lobby.js (calls openCustomDraw() from Classic's region grid)
 //
 // KEY FUNCTIONS:
-//   - initCustomDraw()   wires every button on screen-custom-draw
-//   - resetClassicLobbyRegionUI()   restores the plain region-grid view,
+//   - initCustomDraw()               wires the draw screen's own buttons
+//   - openCustomDraw(originScreenId, onConfirm)   opens the draw screen
+//     from the caller's current screen; onConfirm(shape) runs on confirm
+//   - resetClassicLobbyRegionUI()    restores the plain region-grid view,
 //     for when Classic is entered without going through Custom
 // ============================================================
 import { createDraft } from './custom-draft.js';
 import { initCustomMap } from './custom-map.js';
-import { state } from './state.js';
 
 const REASON_TEXT = {
     TOO_FEW: 'Add at least 3 points to make an area.',
@@ -33,11 +36,10 @@ const REASON_TEXT = {
 
 let draft = null;
 let mapAdapter = null;
+let returnScreenId = null;
+let onConfirmCallback = null;
 
 export function initCustomDraw() {
-    const customTile = document.getElementById('btn-mode-custom');
-    if (customTile) customTile.addEventListener('click', openDrawScreen);
-
     document.getElementById('btn-custom-undo')?.addEventListener('click', () => {
         draft.undo();
         mapAdapter.redraw();
@@ -51,10 +53,17 @@ export function initCustomDraw() {
     });
 
     document.getElementById('btn-custom-confirm')?.addEventListener('click', confirmArea);
-    document.getElementById('btn-custom-back')?.addEventListener('click', backToHome);
+    document.getElementById('btn-custom-back')?.addEventListener('click', backToOrigin);
 }
 
-function openDrawScreen() {
+/**
+ * Opens the draw screen from the caller's own current screen
+ * (`originScreenId`) — "back" and a rejected confirm both return there.
+ * `onConfirm(shape)` is however the caller wants to react to a
+ * confirmed area (Classic: set state.shape/region and show the area
+ * summary); this module only draws, it doesn't decide what a shape means.
+ */
+export function openCustomDraw(originScreenId, onConfirm) {
     // Re-entering Custom (e.g. after "back") must not call L.map() on a
     // container that already has a live map bound to it — Leaflet throws
     // "Map container is already initialized." Destroy the old one first;
@@ -66,7 +75,9 @@ function openDrawScreen() {
     }
 
     draft = createDraft();
-    document.getElementById('screen-landing').classList.add('hidden');
+    returnScreenId = originScreenId;
+    onConfirmCallback = onConfirm;
+    document.getElementById(originScreenId).classList.add('hidden');
     document.getElementById('screen-custom-draw').classList.remove('hidden');
     mapAdapter = initCustomMap('custom-map', draft, { onAddPointResult: handleAddPointResult });
     updateHint(null);
@@ -102,24 +113,18 @@ function confirmArea() {
         updateHint('SELF_CROSSING');
         return;
     }
-    state.shape = shape;
-    state.region = 'CUSTOM';
 
     document.getElementById('screen-custom-draw').classList.add('hidden');
-    document.getElementById('screen-lobby').classList.remove('hidden');
-    document.getElementById('section-region').classList.add('hidden');
-
-    const summary = document.getElementById('custom-area-summary');
-    summary.textContent = `Custom area: about ${Math.round(shape.scaleKm)} km across`;
-    summary.classList.remove('hidden');
+    document.getElementById(returnScreenId).classList.remove('hidden');
+    onConfirmCallback(shape);
 }
 
-function backToHome() {
+function backToOrigin() {
     if (mapAdapter) mapAdapter.map.remove();
     draft = null;
     mapAdapter = null;
     document.getElementById('screen-custom-draw').classList.add('hidden');
-    document.getElementById('screen-landing').classList.remove('hidden');
+    document.getElementById(returnScreenId).classList.remove('hidden');
 }
 
 /** Called when Classic is entered directly (not via Custom), so a

@@ -117,7 +117,13 @@ describeFeature(feature, ({ Scenario }) => {
         Given('a play area in the middle of the Pacific', async () => {
             ({ round, customLobby, state, getLastMap } = await freshApp(() => ({ status: 'ZERO_RESULTS' })));
             customLobby.initCustomDraw();
-            document.getElementById('btn-mode-custom').click(); // opens the draw screen, creates the live draft
+            // Custom is opened directly via its own public API here — this
+            // scenario is about streetview/round behavior, not the lobby's
+            // region-grid wiring, so a minimal onConfirm is enough.
+            customLobby.openCustomDraw('screen-lobby', (shape) => {
+                state.shape = shape;
+                state.region = 'CUSTOM';
+            });
             const map = getLastMap();
             map.fire('click', { latlng: { lat: -20, lng: -140 } });
             map.fire('click', { latlng: { lat: -19, lng: -139 } });
