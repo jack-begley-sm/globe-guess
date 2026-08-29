@@ -6,6 +6,7 @@
 //   - js/state.js       (writes initial config)
 //   - js/user.js        (reads/writes player name)
 //   - js/round.js       (calls startGame)
+//   - js/geo/shapes.js  (getShape, to set state.shape alongside region)
 //
 // USED BY:
 //   - main.js           (initializes lobby events)
@@ -18,6 +19,7 @@
 import { state } from './state.js';
 import { startGame } from './round.js';
 import { getUser, setUser } from './user.js';
+import { getShape } from './geo/shapes.js';
 
 export function initLobby() {
     const startBtn = document.getElementById('btn-start-classic');
@@ -112,8 +114,18 @@ function handleStart() {
         ? parseInt(document.getElementById('slider-speed-bonus').value) 
         : 0;
         
-    const regionBtn = document.querySelector('.region-grid button.active');
-    state.region = regionBtn.dataset.region;
+    // A confirmed Custom area already set state.region/state.shape and hid
+    // the region grid (js/custom-lobby.js's confirmArea) — the grid's own
+    // buttons are still in the DOM underneath it, so reading it
+    // unconditionally here would silently throw the drawn area away and
+    // replace it with whichever built-in region happens to be marked
+    // .active (WORLD, by default). Only read the grid when it's actually
+    // the active choice.
+    if (state.region !== 'CUSTOM') {
+        const regionBtn = document.querySelector('.region-grid button.active');
+        state.region = regionBtn.dataset.region;
+        state.shape = getShape(state.region);
+    }
 
     // Transition
     document.getElementById('screen-lobby').classList.add('hidden');

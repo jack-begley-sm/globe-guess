@@ -1,7 +1,12 @@
 // ============================================================
 // FILE: js/su-state.js
 // PURPOSE: Single source of truth for Stitch Up game state.
+//
+// DEPENDENCIES:
+//   - js/geo/shapes.js  (getShape, for the default WORLD shape)
 // ============================================================
+
+import { getShape } from './geo/shapes.js';
 
 export const suState = {
     isHost: false,
@@ -13,6 +18,7 @@ export const suState = {
     currentRound: 0,
     totalRounds: 5,
     region: 'WORLD',
+    shape: getShape('WORLD'),
     currentSetter: null,
     currentGuesser: null,
     confirmedPanoId: null,

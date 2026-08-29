@@ -4,9 +4,12 @@
 //
 // DEPENDENCIES:
 //   - js/state.js       (reads scores)
-//   - js/map.js         (shows detail map in modal)
+//   - js/result-map.js  (shows detail map in modal)
 //   - js/awards.js      (persists solo awards)
 //   - js/user.js        (reads player name)
+//   - js/round.js       (startGame, for "Play Again" on a Custom area —
+//     round.js also imports renderResults from here, a safe circular
+//     import since neither call happens at module-evaluation time)
 //
 // USED BY:
 //   - js/round.js       (calls renderResults)
@@ -14,13 +17,16 @@
 //
 // KEY FUNCTIONS:
 //   - renderResults()    populates the final scoreboard
-//   - resetGame()        returns to landing screen and resets state
+//   - resetGame()        "Play Again": keeps a Custom area and restarts
+//     a new game; every other region returns to the landing screen
 // ============================================================
 
 import { state, resetState } from './state.js';
-import { showResultOnMap } from './map.js';
+import { showResultOnMap } from './result-map.js';
 import { saveSoloAwards } from './awards.js';
 import { getUser } from './user.js';
+import { SCORING } from './config.js';
+import { startGame } from './round.js';
 
 export function initResults() {
     const playAgainBtn = document.getElementById('btn-play-again');
@@ -54,6 +60,13 @@ export function renderResults() {
     const totalScore = state.scores.reduce((sum, s) => sum + s.totalScore, 0);
     if (totalScoreEl) totalScoreEl.textContent = totalScore.toLocaleString();
 
+    const areaSummaryEl = document.getElementById('results-area-summary');
+    if (areaSummaryEl && state.shape) {
+        const scale = Math.round(state.shape.scaleKm);
+        const cutoff = Math.round(state.shape.scaleKm * SCORING.CUTOFF_RATIO);
+        areaSummaryEl.textContent = `Area: ${scale} km across — anything over ${cutoff} km scored zero`;
+    }
+
     if (resultsList) {
         resultsList.innerHTML = '';
 
@@ -86,6 +99,21 @@ export function renderResults() {
 }
 
 // ── Solo award logic ───────────────────────────────────────────────────────────
+//
+// AUDIT (item 23, S04-regions-migrate.md): Sharpshooter, Globetrotter, On
+// Fire and Lost at Sea below threshold on a RAW km distance, calibrated by
+// eye to the old fixed 2000km-cutoff World game. Now that scoring is
+// relative to the play area (js/geo/shapes.js's scaleKm), these four no
+// longer mean the same thing in every region: 50km is a near-perfect guess
+// relative to WORLD's ~20015km scale but a fairly mediocre one relative to
+// UK's ~1171km scale, so "Sharpshooter" is too easy to earn in UK and too
+// hard in WORLD, and symmetrically for "Lost at Sea" at the 5000km end.
+// High Scorer and Consistent are unaffected — they key off score (already
+// relative) and the player's own average, not a fixed km figure.
+// NOT fixed here: the right replacement thresholds (e.g. some fraction of
+// state.shape.scaleKm) are a "how does it feel" decision, the same kind
+// item 24's manual playtest exists to make — picking numbers now would be
+// a guess. Revisit after that playtest.
 
 function calculateSoloAwards() {
     const scores = state.scores;
@@ -190,6 +218,16 @@ function showDetailModal(roundData) {
 }
 
 function resetGame() {
+    // A drawn Custom area is expensive to recreate (redraw the whole
+    // shape) — "Play Again" keeps it and starts straight into a new
+    // game with the same area. Every other region returns to the
+    // landing screen as before, via resetState()'s full reset to WORLD.
+    if (state.region === 'CUSTOM' && state.shape) {
+        document.getElementById('screen-results').classList.add('hidden');
+        startGame();
+        return;
+    }
+
     resetState();
     document.getElementById('screen-results').classList.add('hidden');
     document.getElementById('screen-landing').classList.remove('hidden');

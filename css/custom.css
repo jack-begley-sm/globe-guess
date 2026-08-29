@@ -1,0 +1,75 @@
+/* ============================================================
+   FILE: css/custom.css
+   PURPOSE: Layout for the Custom-mode draw screen. Functional for
+   now — visual polish is S13's job, not this one.
+
+   RELATED:
+   - css/layout.css     (.screen base positioning, reused here)
+   - js/custom-map.js   (renders into #custom-map)
+   - js/custom-lobby.js (drives the hint text and confirm button)
+   ============================================================ */
+
+#screen-custom-draw {
+    background: var(--color-bg, #111);
+}
+
+#custom-map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.custom-draw-back {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 500;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.custom-draw-hint {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    max-width: 80%;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    text-align: center;
+    font-size: 14px;
+}
+
+.custom-draw-controls {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 0 16px;
+}
+
+.custom-draw-controls button {
+    flex: 1;
+    max-width: 160px;
+}
+
+.custom-draw-controls #btn-custom-confirm {
+    flex: 2;
+}

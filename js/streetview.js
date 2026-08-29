@@ -3,22 +3,27 @@
 // PURPOSE: Google Street View integration and random location generation.
 //
 // DEPENDENCIES:
-//   - js/config.js      (REGIONS)
-//   - js/state.js       (writes currentLocation)
+//   - js/state.js               (writes currentLocation)
+//   - js/geo/polygon-measure.js (randomPointInShape)
+//   - js/geo/polygon.js         (containsPoint)
+//   - js/config.js              (CUSTOM_MAP.MAX_SEARCH_FRACTION)
 //
 // USED BY:
 //   - js/round.js       (initializes street view for each round)
 //
 // KEY FUNCTIONS:
-//   - initStreetView(region)         orchestrates location finding and SV loading
-//   - preloadGoogleMaps()            loads Maps API on app start
-//   - getRandomLocation(regionName)  returns random location coords (no pano ID)
-//   - setVsStreetView(pano, id)      sets SV to specific pano for VS mode
-//   - resizeVisiblePanoramas()       forces all visible panoramas to recompute size
+//   - initStreetView(shape)         orchestrates location finding and SV loading
+//   - preloadGoogleMaps()           loads Maps API on app start
+//   - getRandomLocation(shape)      returns random location coords (no pano ID)
+//   - setVsStreetView(pano, id)     sets SV to specific pano for VS mode
+//   - resizeVisiblePanoramas()      forces all visible panoramas to recompute size
+//   - NoStreetViewInArea            thrown when the 20-attempt budget is exhausted
 // ============================================================
 
-import { REGIONS } from './config.js';
 import { state } from './state.js';
+import { randomPointInShape } from './geo/polygon-measure.js';
+import { containsPoint } from './geo/polygon.js';
+import { CUSTOM_MAP } from './config.js';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -101,7 +106,7 @@ function loadGoogleMaps(callback) {
 // MAIN ENTRY POINTS
 // ─────────────────────────────────────────────────────────────
 
-export function initStreetView(regionName, knownLat = null, knownLng = null) {
+export function initStreetView(shape, knownLat = null, knownLng = null) {
     const container = document.getElementById('street-view-container');
     if (!container) return Promise.reject('No street-view-container found');
 
@@ -111,34 +116,34 @@ export function initStreetView(regionName, knownLat = null, knownLng = null) {
                 // Known good coords from preload — fresh pano lookup only
                 findNearestOutdoor(
                     { lat: knownLat, lng: knownLng },
+                    shape,
                     (data) => {
                         if (!data) {
                             // Preloaded coords found nothing — fall back to full search
-                            const region = REGIONS[regionName] || REGIONS.WORLD;
-                            tryRandomLocation(region, 0, resolve, reject);
+                            tryRandomLocation(shape, 0, resolve, reject);
                             return;
                         }
-                        const pos = data.location.latLng;
-                        state.currentLocation = {
-                            lat: pos.lat(),
-                            lng: pos.lng()
-                        };
+                        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+                        if (!containsPoint(pos, shape)) {
+                            // Found pano drifted outside the shape — resample.
+                            tryRandomLocation(shape, 0, resolve, reject);
+                            return;
+                        }
+                        state.currentLocation = pos;
                         loadPanorama(
                             data,
                             'street-view-container',
                             resolve,
                             () => {
                                 // Panorama was a photosphere — retry full search
-                                const region = REGIONS[regionName] || REGIONS.WORLD;
-                                tryRandomLocation(region, 0, resolve, reject);
+                                tryRandomLocation(shape, 0, resolve, reject);
                             }
                         );
                     },
                     reject
                 );
             } else {
-                const region = REGIONS[regionName] || REGIONS.WORLD;
-                tryRandomLocation(region, 0, resolve, reject);
+                tryRandomLocation(shape, 0, resolve, reject);
             }
         };
 
@@ -214,10 +219,9 @@ export function setVsStreetView(pano, containerId, onReady) {
 }
 
 // Returns coords only — no pano ID to avoid stale IDs between rounds
-export function getRandomLocation(regionName) {
-    const region = REGIONS[regionName] || REGIONS.WORLD;
+export function getRandomLocation(shape) {
     return new Promise((resolve, reject) => {
-        const proceed = () => findValidCoords(region, 0, resolve, reject);
+        const proceed = () => findValidCoords(shape, 0, resolve, reject);
         if (!isLibraryLoaded) {
             loadGoogleMaps(proceed);
         } else {
@@ -230,22 +234,53 @@ export function getRandomLocation(regionName) {
 // LOCATION FINDING
 // ─────────────────────────────────────────────────────────────
 
-function tryRandomLocation(region, attempt, resolve, reject) {
+/** Thrown when no usable Street View could be found in a shape after
+ *  the full attempt budget — distinct from a plain Error so callers
+ *  (js/round.js) can route this specific failure back to the draw
+ *  screen instead of leaving the player on a dead panorama. */
+export class NoStreetViewInArea extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'NoStreetViewInArea';
+    }
+}
+
+/** One string summarising why each of the 20 attempts failed — not a
+ *  change in retry count, just enough detail that the failure message
+ *  says *why* (no coverage vs. drifted outside the shape vs. a
+ *  photosphere) rather than a bare "failed after 20 attempts". */
+function summariseTally(tally) {
+    return `no coverage: ${tally.noPano}, outside area: ${tally.outsideShape}, photosphere: ${tally.photosphere}`;
+}
+
+function tryRandomLocation(shape, attempt, resolve, reject, tally = { noPano: 0, outsideShape: 0, photosphere: 0 }) {
     if (attempt >= 20) {
-        reject(new Error('Failed to find valid Street View after 20 attempts'));
+        reject(new NoStreetViewInArea(`No usable Street View found after 20 attempts (${summariseTally(tally)})`));
         return;
     }
 
-    const randomLoc = generateRandomLatLng(region);
+    const randomLoc = randomPointInShape(shape);
+    if (!randomLoc) {
+        // Sampling budget exhausted for this attempt (a thin shape) — try again.
+        tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
+        return;
+    }
 
-    findNearestOutdoor(randomLoc, (data) => {
+    findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
-            tryRandomLocation(region, attempt + 1, resolve, reject);
+            tally.noPano++;
+            tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
             return;
         }
 
-        const pos = data.location.latLng;
-        state.currentLocation = { lat: pos.lat(), lng: pos.lng() };
+        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+        if (!containsPoint(pos, shape)) {
+            // Found pano drifted outside the shape — resample.
+            tally.outsideShape++;
+            tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
+            return;
+        }
+        state.currentLocation = pos;
 
         loadPanorama(
             data,
@@ -254,32 +289,40 @@ function tryRandomLocation(region, attempt, resolve, reject) {
             () => {
                 // Photosphere detected after render — retry with new location
                 console.log('Retrying — photosphere detected after render');
-                tryRandomLocation(region, attempt + 1, resolve, reject);
+                tally.photosphere++;
+                tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
             }
         );
     }, reject);
 }
 
 // Find valid coords for preloading (returns lat/lng only, no pano)
-function findValidCoords(region, attempt, resolve, reject) {
+function findValidCoords(shape, attempt, resolve, reject, tally = { noPano: 0, outsideShape: 0, photosphere: 0 }) {
     if (attempt >= 20) {
-        reject(new Error('Could not find valid Street View coords'));
+        reject(new NoStreetViewInArea(`Could not find valid Street View coords after 20 attempts (${summariseTally(tally)})`));
         return;
     }
 
-    const randomLoc = generateRandomLatLng(region);
+    const randomLoc = randomPointInShape(shape);
+    if (!randomLoc) {
+        findValidCoords(shape, attempt + 1, resolve, reject, tally);
+        return;
+    }
 
-    findNearestOutdoor(randomLoc, (data) => {
+    findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
-            findValidCoords(region, attempt + 1, resolve, reject);
+            tally.noPano++;
+            findValidCoords(shape, attempt + 1, resolve, reject, tally);
             return;
         }
-        const pos = data.location.latLng;
-        resolve({
-            lat: pos.lat(),
-            lng: pos.lng(),
-            pano: data.location.pano
-        });
+        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+        if (!containsPoint(pos, shape)) {
+            // Found pano drifted outside the shape — resample.
+            tally.outsideShape++;
+            findValidCoords(shape, attempt + 1, resolve, reject, tally);
+            return;
+        }
+        resolve({ ...pos, pano: data.location.pano });
     }, reject);
 }
 
@@ -301,8 +344,27 @@ export function isGoogleCarImagery(data) {
     return (isStandardRes || isOfficial) && hasLinks;
 }
 
-function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
-    const radii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
+/**
+ * The radii ladder, capped by the shape's own scale — a wide search on a
+ * small custom area would happily return a pano far outside it. Not a
+ * substitute for the containment re-check after this resolves (a found
+ * pano can still drift outside the shape near a boundary at any radius);
+ * this just avoids searching further than the shape could ever need to.
+ */
+function radiiFor(shape) {
+    const allRadii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
+    const capMeters = shape.scaleKm * 1000 * CUSTOM_MAP.MAX_SEARCH_FRACTION;
+    const capped = allRadii.filter((r) => r <= capMeters);
+    // Never an empty ladder: a shape small enough to cap away every rung
+    // would otherwise resolve(null) on every attempt without ever
+    // calling getPanorama once, then reject with "no coverage" after 20
+    // attempts that never actually looked — a misleading answer to a
+    // question never asked. The smallest rung is the floor.
+    return capped.length > 0 ? capped : [allRadii[0]];
+}
+
+function findNearestOutdoor(latLng, shape, resolve, reject, attempt = 0) {
+    const radii = radiiFor(shape);
 
     if (attempt >= radii.length) {
         resolve(null); // signal caller to try new random coordinate
@@ -316,14 +378,14 @@ function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
         preference: google.maps.StreetViewPreference.NEAREST
     }, (data, status) => {
         if (status !== google.maps.StreetViewStatus.OK) {
-            findNearestOutdoor(latLng, resolve, reject, attempt + 1);
+            findNearestOutdoor(latLng, shape, resolve, reject, attempt + 1);
             return;
         }
 
         if (isGoogleCarImagery(data)) {
             resolve(data);
         } else {
-            findNearestOutdoor(latLng, resolve, reject, attempt + 1);
+            findNearestOutdoor(latLng, shape, resolve, reject, attempt + 1);
         }
     });
 }
@@ -398,17 +460,6 @@ function loadPanorama(data, containerId, resolve, onPhotosphere) {
         }
     }, 4000);
 }
-
-// ─────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────
-
-function generateRandomLatLng(region) {
-    const lat = Math.random() * (region.lat[1] - region.lat[0]) + region.lat[0];
-    const lng = Math.random() * (region.lng[1] - region.lng[0]) + region.lng[0];
-    return { lat, lng };
-}
-
 
 // ─────────────────────────────────────────────────────────────
 // VIEWPORT RESIZE HANDLING (iOS Safari dynamic toolbar)

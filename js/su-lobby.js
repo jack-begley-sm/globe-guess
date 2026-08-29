@@ -7,6 +7,7 @@ import { suState } from './su-state.js';
 import { getUser, setUser } from './user.js';
 import { getLocalIP } from './vs-lobby.js';
 import { initSuHost, kickSuPlayer, startStitchUpGame } from './su-host.js';
+import { getShape } from './geo/shapes.js';
 
 const GITHUB_PAGES_URL = 'https://jack-begley-sm.github.io/globe-guess';
 
@@ -102,6 +103,7 @@ async function handleSuSetupNext() {
     
     const regionBtn = document.querySelector('#su-region-grid button.active');
     suState.region = regionBtn.dataset.region;
+    suState.shape = getShape(suState.region);
 
     // Re-hosting an existing room (e.g. "Play Again" after a game ends) —
     // keep the same room code, peer connection, and player list instead of

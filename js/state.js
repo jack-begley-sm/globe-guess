@@ -4,6 +4,7 @@
 //
 // DEPENDENCIES:
 //   - js/config.js      (default values)
+//   - js/geo/shapes.js  (getShape, for the default/reset WORLD shape)
 //
 // USED BY:
 //   - js/lobby.js
@@ -16,11 +17,12 @@
 //   - resetState()       resets the state object to defaults
 // ============================================================
 
-import { 
-    DEFAULT_ROUNDS, 
-    DEFAULT_TIME_LIMIT, 
-    DEFAULT_SPEED_BONUS_PCT 
+import {
+    DEFAULT_ROUNDS,
+    DEFAULT_TIME_LIMIT,
+    DEFAULT_SPEED_BONUS_PCT
 } from './config.js';
+import { getShape } from './geo/shapes.js';
 
 export const state = {
     currentRound: 0,
@@ -28,6 +30,7 @@ export const state = {
     timeLimit: DEFAULT_TIME_LIMIT,
     speedBonusPct: DEFAULT_SPEED_BONUS_PCT,
     region: 'WORLD',
+    shape: getShape('WORLD'),
     scores: [],
     currentLocation: null, // { lat, lng }
     guessLatLng: null,     // { lat, lng }
@@ -39,7 +42,10 @@ export function resetState() {
     state.totalRounds = DEFAULT_ROUNDS;
     state.timeLimit = DEFAULT_TIME_LIMIT;
     state.speedBonusPct = DEFAULT_SPEED_BONUS_PCT;
+    // region resets to WORLD, so shape follows it — a drawn Custom shape
+    // does not survive resetState(), same as any other region choice.
     state.region = 'WORLD';
+    state.shape = getShape('WORLD');
     state.scores = [];
     state.currentLocation = null;
     state.guessLatLng = null;

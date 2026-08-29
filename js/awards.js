@@ -32,6 +32,11 @@ const STORAGE_KEY = 'globe_guess_awards';
 
 export const AWARD_DEFS = [
     // Solo / Classic Mode
+    // AUDIT (item 23, S04-regions-migrate.md): the four km figures below
+    // (Sharpshooter/Globetrotter/On Fire/Lost at Sea desc text, mirroring
+    // the actual thresholds in js/results.js's calculateSoloAwards) are
+    // stale now that scoring is region-relative — see the fuller note
+    // there. Update both places together if these are ever retuned.
     { key: 'solo_sharpshooter', icon: '🎯', title: 'Sharpshooter', mode: 'SOLO', desc: 'A single guess within 50 km' },
     { key: 'solo_globetrotter', icon: '🌍', title: 'Globetrotter', mode: 'SOLO', desc: 'Every guess within 500 km' },
     { key: 'solo_on_fire',      icon: '🔥', title: 'On Fire',      mode: 'SOLO', desc: '3+ consecutive guesses within 300 km' },

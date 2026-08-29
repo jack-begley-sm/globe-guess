@@ -10,6 +10,7 @@
 //   - js/lobby.js
 //   - js/streetview.js
 //   - js/scoring.js
+//   - js/geo/shapes.js
 //
 // KEY FUNCTIONS:
 //   - None (Exports constants)
@@ -28,11 +29,46 @@ export const REGIONS = {
 };
 
 export const MAX_SCORE = 5000;
+
+export const SCORING = {
+    CUTOFF_RATIO: 0.45,   // proportion of the play area's diameter beyond which score is 0
+    CURVE_EXPONENT: 2     // p in MAX_SCORE * (1 - r/CUTOFF_RATIO)^p; tuned at item 24
+};
 export const DEFAULT_ROUNDS = 5;
 export const DEFAULT_TIME_LIMIT = 90;
 export const DEFAULT_SPEED_BONUS_PCT = 20;
 
 export const MAP_SETTINGS = {
-    INITIAL_ZOOM: 2,
-    MAX_GUESS_DISTANCE: 2000 // km for zero score
+    INITIAL_ZOOM: 2
+};
+
+export const CUSTOM_MAP = {
+    SAMPLE_ATTEMPTS: 60,   // rejection-sampling budget for randomPointInShape
+    DENSIFY_STEP_DEG: 2,   // ~220km; boundary sampling step for diameterKm
+    MIN_VERTICES: 3,       // fewer than this, a drawn ring cannot be a shape
+    MAX_VERTICES: 24,      // ringIsSimple is O(n^2); bounded for draw-time responsiveness
+    MIN_AREA_KM2: 25,      // a 5km square; starting guess, see S05-draft-model.md item 1
+    MAX_SEARCH_FRACTION: 0.25 // Street View radius ladder capped at this * scaleKm; see S07-constrained-sampling.md
+};
+
+/** Raw (non-unrolled) 4-corner bbox ring for a REGIONS entry. Deliberately
+ *  not unrolled here: WORLD's 360-degree lng span would collapse to a
+ *  degenerate ring, and no other built-in region crosses the antimeridian
+ *  so unrolling would be a no-op for them anyway. See js/geo/shapes.js. */
+function bboxToRing(region) {
+    const [south, north] = region.lat;
+    const [west, east] = region.lng;
+    return [
+        { lat: south, lng: west }, { lat: south, lng: east },
+        { lat: north, lng: east }, { lat: north, lng: west },
+    ];
+}
+
+export const REGION_RINGS = Object.fromEntries(
+    Object.entries(REGIONS).map(([id, region]) => [id, bboxToRing(region)])
+);
+
+export const REGION_LABELS = {
+    WORLD: 'World', UK: 'UK', EUROPE: 'Europe', AMERICAS: 'Americas',
+    AFRICA: 'Africa', ASIA: 'Asia', OCEANIA: 'Oceania'
 };

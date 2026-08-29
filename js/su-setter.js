@@ -144,7 +144,7 @@ function confirmLocation(panoId, latLng) {
 
 async function autoPlaceFallback() {
     if (suState.isHost) {
-        import('./su-host.js').then(m => m.autoPlaceLocation(suState.region));
+        import('./su-host.js').then(m => m.autoPlaceLocation(suState.shape));
     }
     // Guests don't auto-place, host does it for them if they time out
 }

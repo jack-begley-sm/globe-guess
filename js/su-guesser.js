@@ -1,11 +1,15 @@
 // ============================================================
 // FILE: js/su-guesser.js
 // PURPOSE: Guesser phase UI, Street View loading, guess map.
+//
+// DEPENDENCIES:
+//   - js/map-overlay.js (drawShapeOverlay, guardClick)
 // ============================================================
 
 import { suState } from './su-state.js';
 import { sendSuData } from './su-guest.js';
 import { setVsStreetView } from './streetview.js';
+import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let guessMap = null;
 let guessMarker = null;
@@ -66,16 +70,28 @@ function initGuessMap() {
         attribution: '&copy; OpenStreetMap'
     }).addTo(guessMap);
 
+    // This map is rebuilt fresh every turn (see the `guessMap.remove()`
+    // above), so the overlay never needs explicit cleanup — it goes with
+    // the rest of the map instance.
+    if (suState.shape) {
+        drawShapeOverlay(guessMap, suState.shape);
+        fitMapToShape(guessMap, suState.shape);
+    }
+
     guessMarker = null;
     currentGuess = null;
 
+    const guardedPlaceGuessPin = guardClick(() => suState.shape, (e) => {
+        // Panning more than one world-width gives longitudes outside
+        // -180..180 (e.g. 380 instead of 20); wrap so the setter/spectator
+        // reveal doesn't render a duplicate world copy far from the guess.
+        const { lat, lng } = e.latlng.wrap();
+        placeGuessPin(lat, lng);
+    });
+
     guessMap.on('click', (e) => {
         if (mapContainer.classList.contains('expanded')) {
-            // Panning more than one world-width gives longitudes outside
-            // -180..180 (e.g. 380 instead of 20); wrap so the setter/spectator
-            // reveal doesn't render a duplicate world copy far from the guess.
-            const { lat, lng } = e.latlng.wrap();
-            placeGuessPin(lat, lng);
+            guardedPlaceGuessPin(e);
         } else {
             // Expand on click
             mapContainer.classList.add('expanded');
