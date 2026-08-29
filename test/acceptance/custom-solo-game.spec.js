@@ -43,6 +43,13 @@ function manchesterAreaShape() {
 
 const GUESS_POINT = { lat: 53.45, lng: -2.25 }; // inside manchesterAreaShape()
 
+// A point distinct from GUESS_POINT (the fake's fixed location), also
+// inside manchesterAreaShape() — a guess exactly on the location gives
+// distance 0, which scores MAX_SCORE regardless of scaleKm and so can't
+// prove state.shape.scaleKm was actually threaded into calculateScore()
+// via endRound(). A nonzero, scale-sensitive distance can.
+const OFFSET_GUESS_POINT = { lat: 53.46, lng: -2.24 };
+
 /** Fresh DOM + fresh fakes + fresh modules for one scenario. The
  *  Google Maps fake always answers with a pano at GUESS_POINT, so the
  *  location search never fails and every location is inside the shape
@@ -111,7 +118,7 @@ describeFeature(feature, ({ Scenario }) => {
             const guessMap = ctx.getLastMap();
             for (let round = 1; round <= 3; round++) {
                 await flush();
-                placeGuessOn(guessMap, ctx.L, GUESS_POINT);
+                placeGuessOn(guessMap, ctx.L, OFFSET_GUESS_POINT);
                 document.getElementById('btn-submit-guess').click();
                 document.getElementById('btn-next-round').click();
             }
@@ -125,6 +132,19 @@ describeFeature(feature, ({ Scenario }) => {
         And('every guess was inside the area', () => {
             for (const s of ctx.state.scores) {
                 expect(containsPoint(s.guess, shape)).toBe(true);
+            }
+        });
+        And("each round's score matches the area's own scale, proving it was actually used", () => {
+            // Every location the fake returns is GUESS_POINT, and every
+            // guess is OFFSET_GUESS_POINT — a fixed, nonzero distance —
+            // so this is only true if endRound() really passed
+            // state.shape.scaleKm through to calculateScore(), not some
+            // other value (e.g. a stale or built-in-region scale left
+            // over from before the area was drawn).
+            for (const s of ctx.state.scores) {
+                const expected = calculateScore(OFFSET_GUESS_POINT, GUESS_POINT, 0, 90, false, 0, shape.scaleKm);
+                expect(s.totalScore).toBe(expected.totalScore);
+                expect(s.totalScore).toBeGreaterThan(0);
             }
         });
         And('the game ends on the results screen', () => {

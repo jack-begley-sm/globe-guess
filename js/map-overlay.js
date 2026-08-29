@@ -15,8 +15,7 @@
 //   - js/su-guesser.js (planned) — Stitch Up guess map
 //
 // KEY FUNCTIONS:
-//   - drawShapeOverlay(map, shape)   outline + world-with-a-hole mask;
-//     no-op for WORLD (dimming nothing is the correct render)
+//   - drawShapeOverlay(map, shape)   outline + world-with-a-hole mask
 //   - guardClick(getShape, handler)  wraps a click handler so a tap
 //     outside the shape never reaches it
 //   - fitMapToShape(map, shape)      fits the view to the shape and
@@ -28,15 +27,19 @@ const WORLD_RING = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
 
 /**
  * Draws `shape`'s boundary and a world-with-a-hole mask dimming
- * everywhere outside it. WORLD is a no-op — a full-globe hole mask
- * would dim nothing anyway, at the cost of a needless huge polygon.
+ * everywhere outside it. Drawn for WORLD too — REGIONS.WORLD is
+ * lat:[-60,70], not the whole globe (an earlier version of this
+ * function special-cased WORLD as a no-op on the mistaken assumption
+ * that its bbox WAS the globe; `guardClick` was never given that same
+ * exemption, so the two disagreed — guessing above 70N or below 60S in
+ * a World game was silently refused with no outline and no explanation
+ * for why. Drawing the mask correctly dims the polar caps it actually
+ * excludes, matching what guardClick already enforced).
  * @param {object} map
  * @param {import('./geo/polygon.js').Shape} shape
- * @returns {{ remove: () => void } | null} null for WORLD
+ * @returns {{ remove: () => void }}
  */
 export function drawShapeOverlay(map, shape) {
-    if (shape.id === 'WORLD') return null;
-
     const ring = shape.ring.map((p) => [p.lat, p.lng]);
     const outline = L.polygon(ring, { color: '#40c8b4', fill: false, weight: 2 }).addTo(map);
     // Outer ring winds opposite the inner ring, or Leaflet renders the

@@ -15,7 +15,7 @@
 // ============================================================
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createGoogleMapsFake, makePanoData } from '../support/fakes/google-maps.js';
-import { getShape } from '../../js/geo/shapes.js';
+import { getShape, makeCustomShape } from '../../js/geo/shapes.js';
 import { CUSTOM_MAP } from '../../js/config.js';
 
 let getRandomLocation, initStreetView, NoStreetViewInArea;
@@ -83,6 +83,19 @@ describe('getRandomLocation(shape)', () => {
         expect(calls.length).toBeGreaterThan(0);
         expect(calls.every((c) => c.radius <= capMeters)).toBe(true);
         expect(calls.some((c) => c.radius === 500000)).toBe(false); // UK's cap excludes the top rung
+    });
+
+    it('never uses an empty radius ladder, even for a shape far smaller than the cap can accommodate', async () => {
+        // scaleKm here caps to ~328m — under the smallest real rung
+        // (1000m). Without a floor, radiiFor() would return [], meaning
+        // findNearestOutdoor resolves(null) on every attempt without
+        // ever calling getPanorama — a "no coverage" verdict on a
+        // question that was never actually asked.
+        const tiny = makeCustomShape([{ lat: 51, lng: 0 }, { lat: 51.01, lng: 0 }, { lat: 51, lng: 0.01 }]);
+        const calls = await freshStreetView(() => ({ status: 'OK', data: makePanoData({ lat: 51, lng: 0 }) }));
+        await getRandomLocation(tiny);
+        expect(calls.length).toBeGreaterThan(0);
+        expect(calls[0].radius).toBe(1000);
     });
 
     it('resamples when a found pano has drifted outside the shape (containment backstop)', async () => {

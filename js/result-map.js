@@ -1,21 +1,39 @@
 // ============================================================
 // FILE: js/result-map.js
 // PURPOSE: Renders the small read-only result map showing the actual
-//          location, the player's guess, and the line between them.
+//          location, the player's guess, the play area outline, and
+//          the line between the two points.
 //          Split out of js/map.js to stay under the 150-line limit —
 //          shares no state with the guess map.
 //
 // DEPENDENCIES:
-//   - js/state.js       (falls back to state.guessLatLng)
+//   - js/state.js       (falls back to state.guessLatLng; reads state.shape for the outline)
 //
 // USED BY:
 //   - js/round.js       (shows the result after each round)
+//   - js/results.js     (thumb maps and the round-detail modal)
 //
 // KEY FUNCTIONS:
 //   - showResultOnMap(actualLatLng, containerId, guessLatLng?)
 // ============================================================
 
 import { state } from './state.js';
+
+/** S08's own "watch out for" calls for this: the result map is the only
+ *  place the player sees their miss in context, so it should show the
+ *  play area boundary too, not just the two points. state.shape is
+ *  constant for the whole game (only startGame/confirmArea change it),
+ *  so it's safe to read here for any round's result, not just the
+ *  current one. No mask — this map is read-only, there's nothing to
+ *  guard against clicking outside of. */
+function drawShapeOutline(map, shape) {
+    if (!shape) return;
+    L.polygon(shape.ring.map((p) => [p.lat, p.lng]), {
+        color: '#40c8b4',
+        fill: false,
+        weight: 2,
+    }).addTo(map);
+}
 
 export function showResultOnMap(actualLatLng, containerId, guessLatLng = null) {
     const targetContainer = document.getElementById(containerId);
@@ -39,6 +57,8 @@ export function showResultOnMap(actualLatLng, containerId, guessLatLng = null) {
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(resMap);
+
+    drawShapeOutline(resMap, state.shape);
 
     const actualMarker = L.circleMarker(actualLatLng, {
         color: '#f0e8d2', // ivory

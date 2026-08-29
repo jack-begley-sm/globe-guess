@@ -24,11 +24,17 @@ function fakeMap() {
 }
 
 describe('drawShapeOverlay', () => {
-    it('is a no-op for WORLD — no layers added, returns null', () => {
+    it('draws the outline and mask for WORLD too — its bbox is lat:[-60,70], not the whole globe', () => {
+        // An earlier version special-cased WORLD as a no-op, on the
+        // mistaken assumption its bbox spanned the whole globe. It
+        // doesn't (REGIONS.WORLD is lat:[-60,70]), and guardClick was
+        // never given the same exemption — so a tap above 70N or below
+        // 60S was silently refused with no outline ever shown for why.
         const map = fakeMap();
         const overlay = drawShapeOverlay(map, getShape('WORLD'));
-        expect(overlay).toBeNull();
-        expect(map._layers.length).toBe(0);
+        expect(overlay).not.toBeNull();
+        const polygons = map._layers.filter((l) => l.kind === 'polygon');
+        expect(polygons.length).toBe(2);
     });
 
     it('draws an outline and a world-with-a-hole mask for a non-WORLD shape', () => {

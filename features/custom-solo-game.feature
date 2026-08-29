@@ -6,6 +6,7 @@ Feature: Playing a solo game in a custom area
     When the player plays all 3 rounds
     Then every location was inside the area
     And every guess was inside the area
+    And each round's score matches the area's own scale, proving it was actually used
     And the game ends on the results screen
 
   Scenario: Scores use the custom area's scale

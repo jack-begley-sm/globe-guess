@@ -19,7 +19,7 @@
 //   - createDraft()   returns a Draft: addPoint/undo/clear/points/status/close
 // ============================================================
 import { unrollRing } from './geo/polygon.js';
-import { pathIsSimple } from './geo/polygon-validate.js';
+import { pathIsSimple, ringIsSimple } from './geo/polygon-validate.js';
 import { areaKm2 } from './geo/polygon-measure.js';
 import { makeCustomShape } from './geo/shapes.js';
 import { CUSTOM_MAP } from './config.js';
@@ -81,6 +81,17 @@ export function createDraft() {
         }
 
         const unrolled = unrollRing(points);
+
+        // addPoint only guarantees the OPEN path never crosses itself
+        // (pathIsSimple, no closing edge) — the ring's closing edge, from
+        // the last point back to the first, is never validated until it
+        // actually exists here. A ring whose only self-crossing is via
+        // that closing edge would otherwise report canClose:true and
+        // throw unhandled in makeCustomShape when the player confirms.
+        if (!ringIsSimple(unrolled)) {
+            return { canClose: false, reason: 'SELF_CROSSING', vertexCount };
+        }
+
         if (areaKm2(unrolled) < CUSTOM_MAP.MIN_AREA_KM2) {
             return { canClose: false, reason: 'TOO_SMALL', vertexCount };
         }

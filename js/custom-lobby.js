@@ -55,6 +55,16 @@ export function initCustomDraw() {
 }
 
 function openDrawScreen() {
+    // Re-entering Custom (e.g. after "back") must not call L.map() on a
+    // container that already has a live map bound to it — Leaflet throws
+    // "Map container is already initialized." Destroy the old one first;
+    // same pattern js/su-guesser.js already uses for its own rebuilt-
+    // every-turn map.
+    if (mapAdapter) {
+        mapAdapter.map.remove();
+        mapAdapter = null;
+    }
+
     draft = createDraft();
     document.getElementById('screen-landing').classList.add('hidden');
     document.getElementById('screen-custom-draw').classList.remove('hidden');
@@ -78,7 +88,20 @@ function updateHint(reason) {
 }
 
 function confirmArea() {
-    const shape = draft.close();
+    // status()/close() are now the source of truth for every rejection
+    // reason, so this should never actually throw — but it's the one
+    // place an unhandled throw would otherwise escape a click listener
+    // silently (no navigation, no message, button stays enabled), so
+    // catching it and surfacing something is cheap insurance against
+    // the next geometry edge case nobody's thought of yet.
+    let shape;
+    try {
+        shape = draft.close();
+    } catch (err) {
+        console.error('confirmArea: draft.close() threw unexpectedly', err);
+        updateHint('SELF_CROSSING');
+        return;
+    }
     state.shape = shape;
     state.region = 'CUSTOM';
 
@@ -92,6 +115,7 @@ function confirmArea() {
 }
 
 function backToHome() {
+    if (mapAdapter) mapAdapter.map.remove();
     draft = null;
     mapAdapter = null;
     document.getElementById('screen-custom-draw').classList.add('hidden');

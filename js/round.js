@@ -30,6 +30,19 @@ import { returnToDrawScreenWithMessage } from './custom-lobby.js';
 
 let timerInterval;
 
+// S07's own "Watch out for" calls for tagging this promise with the
+// shape it was started for, and discarding it on mismatch if the shape
+// changes mid-flight. Not implemented — deliberately, not by oversight —
+// because it's currently safe without it, by two things that would both
+// have to stop being true at once for it to matter: (1) `state.shape`
+// only ever changes via `startGame()`, which unconditionally overwrites
+// this promise itself before using it, so a truly stale pre-fetch is
+// never read; and (2) even if that changed, `initStreetView`'s own
+// containment re-check (see js/streetview.js) would reject a location
+// outside the new shape and resample anyway. If a future entry point
+// can start a round without going through `startGame()` first, revisit
+// this — the tag is one line to add, the backstop above is not a
+// substitute for it, just a reason it hasn't bitten yet.
 let nextLocationPromise = null;
 
 export function startGame() {

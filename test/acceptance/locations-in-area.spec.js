@@ -175,12 +175,22 @@ describeFeature(feature, ({ Scenario }) => {
         When('round 1 is being played', async () => {
             round.startGame();
             await flush();
+            // js/streetview.js's loadPanorama has a real 500ms setTimeout
+            // (waiting on the panorama's pano_changed event) between the
+            // known-coords lookup resolving and round 1's own .then()
+            // chain continuing on to kick off round 2's pre-fetch — a
+            // plain flush() (two 0ms ticks) isn't long enough to reach it.
+            await new Promise((r) => setTimeout(r, 600));
         });
         Then('the round 2 location has already been found inside the area', () => {
-            // One getPanorama call for round 1's own search, a second
-            // already made for the round-2 pre-fetch it triggers —
-            // both against the fake, no real network, both inside the shape.
-            expect(calls.length).toBeGreaterThanOrEqual(2);
+            // Round 1 alone already makes 2 getPanorama calls: one from
+            // startGame()'s own pre-fetch (findValidCoords), one from
+            // initStreetView's known-coords lookup for that location.
+            // >= 2 would pass even with the round-2 pre-fetch deleted —
+            // verified by mutation testing this assertion against a
+            // build with that pre-fetch removed. >= 3 is the real bar:
+            // it requires the round-2 pre-fetch to have actually fired.
+            expect(calls.length).toBeGreaterThanOrEqual(3);
         });
     });
 });

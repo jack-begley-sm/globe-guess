@@ -17,7 +17,7 @@
 //   - npm test
 // ============================================================
 import { loadFeature, describeFeature } from '@amiceli/vitest-cucumber';
-import { expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { installLeafletFakeCapturingMap } from '../support/fakes/leaflet.js';
 import { initCustomDraw } from '../../js/custom-lobby.js';
@@ -174,5 +174,69 @@ describeFeature(feature, ({ Background, Scenario }) => {
             const markers = getLastMap()._layers.filter((l) => l.kind === 'circleMarker');
             expect(markers.length).toBe(0);
         });
+    });
+});
+
+// Not part of S06's own feature scenarios (those stop at "confirming
+// carries the area into the game options") — this covers the one real
+// transition none of them exercise: pressing the actual Classic lobby
+// START button afterward. Caught a real Critical bug on first write:
+// js/lobby.js's handleStart() unconditionally read `.region-grid
+// button.active` and overwrote state.region/state.shape, discarding the
+// confirmed Custom area and silently playing WORLD instead — the region
+// grid's buttons stay in the DOM (WORLD still marked .active) even once
+// #section-region itself is hidden.
+describe('Pressing START after confirming a Custom area', () => {
+    it('keeps the drawn area instead of falling back to whichever built-in region is marked active', async () => {
+        vi.resetModules();
+        const { L, getLastMap } = installLeafletFakeCapturingMap();
+        const html = readFileSync('index.html', 'utf-8');
+        document.body.innerHTML = html.match(/<body>([\s\S]*)<\/body>/)[1];
+
+        const { initCustomDraw: initDraw } = await import('../../js/custom-lobby.js');
+        const { initLobby } = await import('../../js/lobby.js');
+        const state = (await import('../../js/state.js')).state;
+
+        initDraw();
+        initLobby();
+
+        document.getElementById('btn-mode-custom').click();
+        const map = getLastMap();
+        map.fire('click', { latlng: L.latLng(51, 0) });
+        map.fire('click', { latlng: L.latLng(52, 1) });
+        map.fire('click', { latlng: L.latLng(51, 1) });
+        document.getElementById('btn-custom-confirm').click();
+        expect(state.region).toBe('CUSTOM');
+        const drawnShape = state.shape;
+
+        document.getElementById('input-player-name').value = 'Tester';
+        document.getElementById('btn-start-classic').click();
+
+        expect(state.region).toBe('CUSTOM');
+        expect(state.shape).toBe(drawnShape);
+    });
+});
+
+// Also not part of S06's own scenarios. addPoint only validates the OPEN
+// path (no closing edge), so a ring whose sole crossing is via that
+// closing edge sailed through every tap and left CONFIRM enabled —
+// pressing it then threw unhandled out of the click listener. Fixed by
+// checking ringIsSimple on the closed ring in custom-draft.js's status().
+describe('A ring that only crosses itself via the closing edge', () => {
+    it('leaves CONFIRM disabled instead of throwing when pressed', () => {
+        resetWorld();
+        clickCustomTile();
+        // A spiral: every individual tap is accepted, but the ring
+        // closes(last point back to the first) across an earlier edge.
+        tapMap(0, 0);
+        tapMap(0, 1);
+        tapMap(1, 1);
+        tapMap(1, -1);
+        tapMap(-1, -1);
+        tapMap(-1, 2);
+        tapMap(3, 2);
+
+        expect(document.getElementById('btn-custom-confirm').disabled).toBe(true);
+        expect(() => document.getElementById('btn-custom-confirm').click()).not.toThrow();
     });
 });

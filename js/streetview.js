@@ -354,7 +354,13 @@ export function isGoogleCarImagery(data) {
 function radiiFor(shape) {
     const allRadii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
     const capMeters = shape.scaleKm * 1000 * CUSTOM_MAP.MAX_SEARCH_FRACTION;
-    return allRadii.filter((r) => r <= capMeters);
+    const capped = allRadii.filter((r) => r <= capMeters);
+    // Never an empty ladder: a shape small enough to cap away every rung
+    // would otherwise resolve(null) on every attempt without ever
+    // calling getPanorama once, then reject with "no coverage" after 20
+    // attempts that never actually looked — a misleading answer to a
+    // question never asked. The smallest rung is the floor.
+    return capped.length > 0 ? capped : [allRadii[0]];
 }
 
 function findNearestOutdoor(latLng, shape, resolve, reject, attempt = 0) {

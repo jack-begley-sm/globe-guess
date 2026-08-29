@@ -130,6 +130,25 @@ describe('status', () => {
         TRIANGLE.forEach((p) => draft.addPoint(p));
         expect(draft.status()).toEqual({ canClose: true, vertexCount: 3 });
     });
+
+    it('cannot close a ring whose only self-crossing is via the closing edge (SELF_CROSSING)', () => {
+        // A spiral: every individual tap is accepted (the OPEN path never
+        // crosses itself), but closing it — the edge from the last point
+        // back to the first — crosses an earlier edge. addPoint's own
+        // pathIsSimple check cannot see this; only a closed-ring check
+        // (ringIsSimple) run in status() can.
+        const draft = createDraft();
+        const spiral = [
+            { lat: 0, lng: 0 }, { lat: 0, lng: 1 }, { lat: 1, lng: 1 },
+            { lat: 1, lng: -1 }, { lat: -1, lng: -1 }, { lat: -1, lng: 2 }, { lat: 3, lng: 2 },
+        ];
+        for (const p of spiral) {
+            expect(draft.addPoint(p)).toEqual({ ok: true });
+        }
+        const status = draft.status();
+        expect(status.canClose).toBe(false);
+        expect(status.reason).toBe('SELF_CROSSING');
+    });
 });
 
 describe('close', () => {

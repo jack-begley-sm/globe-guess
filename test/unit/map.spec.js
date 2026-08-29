@@ -49,11 +49,13 @@ describe('resetMap(shape)', () => {
         expect(polygons.length).toBe(2); // outline + mask
     });
 
-    it('draws no overlay for WORLD', async () => {
+    it('draws the overlay for WORLD too, not just custom/other built-in shapes', async () => {
+        // WORLD's bbox (lat:[-60,70]) isn't the whole globe, so it needs
+        // the same outline/mask as any other shape — see map-overlay.js.
         const { resetMap, getLastMap } = await freshMap();
         resetMap(getShape('WORLD'));
         const polygons = getLastMap()._layers.filter((l) => l.kind === 'polygon');
-        expect(polygons.length).toBe(0);
+        expect(polygons.length).toBe(2);
     });
 
     it('replaces the previous overlay rather than stacking them across rounds', async () => {
