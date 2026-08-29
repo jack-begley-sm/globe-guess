@@ -5,6 +5,7 @@ import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
+import { getShape } from './geo/shapes.js';
  
 let timerInterval;
 let autoAdvanceTimeout;
@@ -124,6 +125,7 @@ export function resumeInProgressRound(gameState) {
     vsState.currentRound = gameState.currentRound;
     vsState.totalRounds = gameState.totalRounds;
     vsState.region = gameState.region;
+    vsState.shape = getShape(vsState.region);
     vsState.currentLocation = gameState.currentLocation;
 
     initVsMap();

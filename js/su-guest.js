@@ -11,6 +11,7 @@ import { initSpectatorView, updateLiveGuesserPin } from './su-spectator.js';
 import { initRoundReveal, showSuResults } from './su-results.js';
 import { saveSession } from './user.js';
 import { PEER_CONFIG } from './peer-config.js';
+import { getShape } from './geo/shapes.js';
 
 const PeerJS = window.Peer;
 
@@ -75,7 +76,7 @@ export function handleSuEvent(type, payload) {
                     suState.totalRounds = gs.totalRounds;
                     suState.currentSetter = gs.currentSetter;
                     suState.currentGuesser = gs.currentGuesser;
-                    if (gs.region) suState.region = gs.region;
+                    if (gs.region) { suState.region = gs.region; suState.shape = getShape(gs.region); }
                     
                     // Trigger UI transition if we are in the lobby/waiting
                     const lobbyVisible = document.getElementById('screen-multiplayer-lobby') && !document.getElementById('screen-multiplayer-lobby').classList.contains('hidden');
@@ -159,7 +160,7 @@ function handleStartRound(data) {
     suState.currentSetter = data.setter;
     suState.currentGuesser = data.guesser;
     suState.totalRounds = data.totalRounds;
-    if (data.region) suState.region = data.region;
+    if (data.region) { suState.region = data.region; suState.shape = getShape(data.region); }
 
     // Hide all game screens
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -185,7 +186,7 @@ function handleGuesserPhase(data) {
         suState.currentSetter = data.setter;
         suState.currentGuesser = data.guesser;
         suState.totalRounds = data.totalRounds;
-        if (data.region) suState.region = data.region;
+        if (data.region) { suState.region = data.region; suState.shape = getShape(data.region); }
     }
 
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
