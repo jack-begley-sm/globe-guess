@@ -38,5 +38,28 @@ export const MAP_SETTINGS = {
 };
 
 export const CUSTOM_MAP = {
-    SAMPLE_ATTEMPTS: 60 // rejection-sampling budget for randomPointInShape
+    SAMPLE_ATTEMPTS: 60,   // rejection-sampling budget for randomPointInShape
+    DENSIFY_STEP_DEG: 2    // ~220km; boundary sampling step for diameterKm
+};
+
+/** Raw (non-unrolled) 4-corner bbox ring for a REGIONS entry. Deliberately
+ *  not unrolled here: WORLD's 360-degree lng span would collapse to a
+ *  degenerate ring, and no other built-in region crosses the antimeridian
+ *  so unrolling would be a no-op for them anyway. See js/geo/shapes.js. */
+function bboxToRing(region) {
+    const [south, north] = region.lat;
+    const [west, east] = region.lng;
+    return [
+        { lat: south, lng: west }, { lat: south, lng: east },
+        { lat: north, lng: east }, { lat: north, lng: west },
+    ];
+}
+
+export const REGION_RINGS = Object.fromEntries(
+    Object.entries(REGIONS).map(([id, region]) => [id, bboxToRing(region)])
+);
+
+export const REGION_LABELS = {
+    WORLD: 'World', UK: 'UK', EUROPE: 'Europe', AMERICAS: 'Americas',
+    AFRICA: 'Africa', ASIA: 'Asia', OCEANIA: 'Oceania'
 };
