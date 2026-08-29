@@ -5,6 +5,8 @@
 // DEPENDENCIES:
 //   - js/state.js               (writes currentLocation)
 //   - js/geo/polygon-measure.js (randomPointInShape)
+//   - js/geo/polygon.js         (containsPoint)
+//   - js/config.js              (CUSTOM_MAP.MAX_SEARCH_FRACTION)
 //
 // USED BY:
 //   - js/round.js       (initializes street view for each round)
@@ -19,6 +21,8 @@
 
 import { state } from './state.js';
 import { randomPointInShape } from './geo/polygon-measure.js';
+import { containsPoint } from './geo/polygon.js';
+import { CUSTOM_MAP } from './config.js';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -111,17 +115,20 @@ export function initStreetView(shape, knownLat = null, knownLng = null) {
                 // Known good coords from preload — fresh pano lookup only
                 findNearestOutdoor(
                     { lat: knownLat, lng: knownLng },
+                    shape,
                     (data) => {
                         if (!data) {
                             // Preloaded coords found nothing — fall back to full search
                             tryRandomLocation(shape, 0, resolve, reject);
                             return;
                         }
-                        const pos = data.location.latLng;
-                        state.currentLocation = {
-                            lat: pos.lat(),
-                            lng: pos.lng()
-                        };
+                        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+                        if (!containsPoint(pos, shape)) {
+                            // Found pano drifted outside the shape — resample.
+                            tryRandomLocation(shape, 0, resolve, reject);
+                            return;
+                        }
+                        state.currentLocation = pos;
                         loadPanorama(
                             data,
                             'street-view-container',
@@ -239,14 +246,19 @@ function tryRandomLocation(shape, attempt, resolve, reject) {
         return;
     }
 
-    findNearestOutdoor(randomLoc, (data) => {
+    findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
             tryRandomLocation(shape, attempt + 1, resolve, reject);
             return;
         }
 
-        const pos = data.location.latLng;
-        state.currentLocation = { lat: pos.lat(), lng: pos.lng() };
+        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+        if (!containsPoint(pos, shape)) {
+            // Found pano drifted outside the shape — resample.
+            tryRandomLocation(shape, attempt + 1, resolve, reject);
+            return;
+        }
+        state.currentLocation = pos;
 
         loadPanorama(
             data,
@@ -274,17 +286,18 @@ function findValidCoords(shape, attempt, resolve, reject) {
         return;
     }
 
-    findNearestOutdoor(randomLoc, (data) => {
+    findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
             findValidCoords(shape, attempt + 1, resolve, reject);
             return;
         }
-        const pos = data.location.latLng;
-        resolve({
-            lat: pos.lat(),
-            lng: pos.lng(),
-            pano: data.location.pano
-        });
+        const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
+        if (!containsPoint(pos, shape)) {
+            // Found pano drifted outside the shape — resample.
+            findValidCoords(shape, attempt + 1, resolve, reject);
+            return;
+        }
+        resolve({ ...pos, pano: data.location.pano });
     }, reject);
 }
 
@@ -306,8 +319,21 @@ export function isGoogleCarImagery(data) {
     return (isStandardRes || isOfficial) && hasLinks;
 }
 
-function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
-    const radii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
+/**
+ * The radii ladder, capped by the shape's own scale — a wide search on a
+ * small custom area would happily return a pano far outside it. Not a
+ * substitute for the containment re-check after this resolves (a found
+ * pano can still drift outside the shape near a boundary at any radius);
+ * this just avoids searching further than the shape could ever need to.
+ */
+function radiiFor(shape) {
+    const allRadii = [1000, 5000, 10000, 25000, 50000, 100000, 200000, 500000];
+    const capMeters = shape.scaleKm * 1000 * CUSTOM_MAP.MAX_SEARCH_FRACTION;
+    return allRadii.filter((r) => r <= capMeters);
+}
+
+function findNearestOutdoor(latLng, shape, resolve, reject, attempt = 0) {
+    const radii = radiiFor(shape);
 
     if (attempt >= radii.length) {
         resolve(null); // signal caller to try new random coordinate
@@ -321,14 +347,14 @@ function findNearestOutdoor(latLng, resolve, reject, attempt = 0) {
         preference: google.maps.StreetViewPreference.NEAREST
     }, (data, status) => {
         if (status !== google.maps.StreetViewStatus.OK) {
-            findNearestOutdoor(latLng, resolve, reject, attempt + 1);
+            findNearestOutdoor(latLng, shape, resolve, reject, attempt + 1);
             return;
         }
 
         if (isGoogleCarImagery(data)) {
             resolve(data);
         } else {
-            findNearestOutdoor(latLng, resolve, reject, attempt + 1);
+            findNearestOutdoor(latLng, shape, resolve, reject, attempt + 1);
         }
     });
 }

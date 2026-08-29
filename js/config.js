@@ -47,7 +47,8 @@ export const CUSTOM_MAP = {
     DENSIFY_STEP_DEG: 2,   // ~220km; boundary sampling step for diameterKm
     MIN_VERTICES: 3,       // fewer than this, a drawn ring cannot be a shape
     MAX_VERTICES: 24,      // ringIsSimple is O(n^2); bounded for draw-time responsiveness
-    MIN_AREA_KM2: 25       // a 5km square; starting guess, see S05-draft-model.md item 1
+    MIN_AREA_KM2: 25,      // a 5km square; starting guess, see S05-draft-model.md item 1
+    MAX_SEARCH_FRACTION: 0.25 // Street View radius ladder capped at this * scaleKm; see S07-constrained-sampling.md
 };
 
 /** Raw (non-unrolled) 4-corner bbox ring for a REGIONS entry. Deliberately
