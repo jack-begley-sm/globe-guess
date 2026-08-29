@@ -13,6 +13,7 @@
 //
 // KEY FUNCTIONS:
 //   - ringIsSimple(ring)   true when no two non-adjacent edges cross
+//   - pathIsSimple(path)   ringIsSimple for an OPEN polyline (no closing edge)
 // ============================================================
 
 const COLLINEAR_EPS = 1e-9;
@@ -75,6 +76,36 @@ export function ringIsSimple(ring) {
             const adjacent = j === i + 1 || (i === 0 && j === n - 1);
             if (adjacent) continue;
             const b1 = ring[j], b2 = ring[(j + 1) % n];
+            if (segmentsIntersect(a1, a2, b1, b2)) return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * True when no two non-adjacent edges of the OPEN polyline `path`
+ * intersect, and no two points share a coordinate. Unlike `ringIsSimple`,
+ * there is no closing edge from the last point back to the first — use
+ * this while a shape is still being drawn (js/custom-draft.js checks it
+ * on every `addPoint`); use `ringIsSimple` once the ring is closed.
+ * Precondition: `path` is already unrolled.
+ * @param {import('./polygon.js').Ring} path - already unrolled
+ * @returns {boolean}
+ */
+export function pathIsSimple(path) {
+    const n = path.length;
+    if (n < 3) return true;
+
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (path[i].lat === path[j].lat && path[i].lng === path[j].lng) return false;
+        }
+    }
+
+    for (let i = 0; i < n - 1; i++) {
+        const a1 = path[i], a2 = path[i + 1];
+        for (let j = i + 2; j < n - 1; j++) {
+            const b1 = path[j], b2 = path[j + 1];
             if (segmentsIntersect(a1, a2, b1, b2)) return false;
         }
     }

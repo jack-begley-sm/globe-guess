@@ -66,3 +66,38 @@ describe('createDraft', () => {
         expect(draft.points).toEqual([]);
     });
 });
+
+describe('addPoint rejection codes', () => {
+    it('rejects a 25th point as TOO_MANY once 24 are already placed', () => {
+        const draft = createDraft();
+        for (let i = 0; i < 24; i++) {
+            const result = draft.addPoint({ lat: 0, lng: i * 0.01 });
+            expect(result.ok).toBe(true);
+        }
+        const result = draft.addPoint({ lat: 0, lng: 1 });
+        expect(result).toEqual({ ok: false, reason: 'TOO_MANY' });
+        expect(draft.points.length).toBe(24);
+    });
+
+    it('rejects a tap that would make the open path cross itself, leaving points unchanged', () => {
+        const draft = createDraft();
+        draft.addPoint({ lat: 0, lng: 0 });
+        draft.addPoint({ lat: 10, lng: 10 });
+        draft.addPoint({ lat: 0, lng: 10 });
+        const before = draft.points;
+        const result = draft.addPoint({ lat: 10, lng: 0 }); // edge 0-1 crosses edge 2-3
+        expect(result).toEqual({ ok: false, reason: 'SELF_CROSSING' });
+        expect(draft.points).toEqual(before);
+    });
+
+    it('rejects a tap that would wind the shape all the way round the world', () => {
+        const draft = createDraft();
+        draft.addPoint({ lat: 0, lng: 0 });
+        draft.addPoint({ lat: 0, lng: 170 });
+        draft.addPoint({ lat: 0, lng: -20 });
+        const before = draft.points;
+        const result = draft.addPoint({ lat: 10, lng: 0 });
+        expect(result).toEqual({ ok: false, reason: 'WOUND_ROUND_WORLD' });
+        expect(draft.points).toEqual(before);
+    });
+});

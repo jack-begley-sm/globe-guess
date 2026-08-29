@@ -6,7 +6,9 @@
 //          .docs/custom-maps/05-conceptualization/S05-draft-model.md.
 //
 // DEPENDENCIES:
-//   - none (item 1; item 3 adds js/geo/shapes.js and js/config.js)
+//   - js/geo/polygon.js (unrollRing)
+//   - js/geo/polygon-validate.js (pathIsSimple)
+//   - js/config.js (CUSTOM_MAP)
 //
 // USED BY:
 //   - js/custom-map.js (planned, S06) — Leaflet adapter forwards taps here
@@ -14,6 +16,9 @@
 // KEY FUNCTIONS:
 //   - createDraft()   returns a Draft: addPoint/undo/clear/points/status/close
 // ============================================================
+import { unrollRing } from './geo/polygon.js';
+import { pathIsSimple } from './geo/polygon-validate.js';
+import { CUSTOM_MAP } from './config.js';
 
 /**
  * @typedef {{ lat: number, lng: number }} LatLng
@@ -32,7 +37,24 @@ export function createDraft() {
     let points = [];
 
     function addPoint(latLng) {
-        points.push({ lat: latLng.lat, lng: latLng.lng });
+        if (points.length >= CUSTOM_MAP.MAX_VERTICES) {
+            return { ok: false, reason: 'TOO_MANY' };
+        }
+
+        const candidate = { lat: latLng.lat, lng: latLng.lng };
+        const unrolledPath = unrollRing([...points, candidate]);
+
+        const lngs = unrolledPath.map((p) => p.lng);
+        const span = Math.max(...lngs) - Math.min(...lngs);
+        if (span >= 360) {
+            return { ok: false, reason: 'WOUND_ROUND_WORLD' };
+        }
+
+        if (!pathIsSimple(unrolledPath)) {
+            return { ok: false, reason: 'SELF_CROSSING' };
+        }
+
+        points.push(candidate);
         return { ok: true };
     }
 
