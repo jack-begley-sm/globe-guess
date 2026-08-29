@@ -18,10 +18,13 @@ import { createGoogleMapsFake, makePanoData } from '../support/fakes/google-maps
 import { getShape } from '../../js/geo/shapes.js';
 import { CUSTOM_MAP } from '../../js/config.js';
 
-let getRandomLocation, initStreetView;
+let getRandomLocation, initStreetView, NoStreetViewInArea;
 
 /** streetview.js keeps module-level svService/isLibraryLoaded state, so
- *  each test needs a fresh module import bound to its own fake. */
+ *  each test needs a fresh module import bound to its own fake — and
+ *  NoStreetViewInArea must come from that SAME fresh instance, or
+ *  `instanceof` fails against a different (stale or differently-fresh)
+ *  copy of the class from a separate `import()` of the same file. */
 async function freshStreetView(handler) {
     const { google, calls } = createGoogleMapsFake(handler);
     globalThis.google = google;
@@ -29,6 +32,7 @@ async function freshStreetView(handler) {
     const mod = await import('../../js/streetview.js');
     getRandomLocation = mod.getRandomLocation;
     initStreetView = mod.initStreetView;
+    NoStreetViewInArea = mod.NoStreetViewInArea;
     return calls;
 }
 
@@ -60,9 +64,16 @@ describe('getRandomLocation(shape)', () => {
         expect(calls.length).toBeGreaterThan(0); // proves the fake, not a real fetch, was hit
     });
 
-    it('rejects after 20 failed attempts', async () => {
+    it('rejects with a typed NoStreetViewInArea after 20 failed attempts, distinguishing the reasons', async () => {
         await freshStreetView(() => ({ status: 'ZERO_RESULTS' }));
-        await expect(getRandomLocation(getShape('UK'))).rejects.toThrow();
+        await expect(getRandomLocation(getShape('UK'))).rejects.toBeInstanceOf(NoStreetViewInArea);
+        try {
+            await getRandomLocation(getShape('UK'));
+        } catch (err) {
+            expect(err.message).toMatch(/no coverage: \d+/);
+            expect(err.message).toMatch(/outside area: \d+/);
+            expect(err.message).toMatch(/photosphere: \d+/);
+        }
     });
 
     it('never requests a radius beyond the shape-scaled cap', async () => {

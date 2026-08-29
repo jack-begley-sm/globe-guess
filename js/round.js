@@ -7,6 +7,7 @@
 //   - js/streetview.js  (initializes SV)
 //   - js/map.js         (handles guess map)
 //   - js/scoring.js     (calculates round score)
+//   - js/custom-lobby.js (returnToDrawScreenWithMessage, for NoStreetViewInArea)
 //
 // USED BY:
 //   - js/lobby.js       (starts game)
@@ -22,7 +23,8 @@ import { state, resetState } from './state.js';
 import { initMap, resetMap, submitGuess, showResultOnMap } from './map.js';
 import { calculateScore } from './scoring.js';
 import { renderResults } from './results.js';
-import { getRandomLocation, initStreetView } from './streetview.js';
+import { getRandomLocation, initStreetView, NoStreetViewInArea } from './streetview.js';
+import { returnToDrawScreenWithMessage } from './custom-lobby.js';
 
 let timerInterval;
 
@@ -66,6 +68,10 @@ export function startRound() {
         startTimer();
     }).catch(err => {
         console.error(err);
+        if (err instanceof NoStreetViewInArea && state.region === 'CUSTOM') {
+            returnToDrawScreenWithMessage('No street view was found in this area — try drawing somewhere else.');
+            return;
+        }
         startTimer();
     });
 }

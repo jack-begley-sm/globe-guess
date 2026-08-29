@@ -104,3 +104,25 @@ export function resetClassicLobbyRegionUI() {
     document.getElementById('section-region').classList.remove('hidden');
     document.getElementById('custom-area-summary').classList.add('hidden');
 }
+
+/**
+ * Sends the player back to the draw screen with their already-drawn
+ * area intact (js/streetview.js's NoStreetViewInArea case) — the
+ * draft from the confirm that got them here is still alive in this
+ * module, so redrawing it is enough; nothing needs re-fetching. A
+ * no-op if reached without a live draft (round started some other way
+ * than through Custom in this page load — the caller should not have
+ * called this in the first place).
+ */
+export function returnToDrawScreenWithMessage(message) {
+    if (!draft || !mapAdapter) return;
+
+    document.querySelectorAll('.screen').forEach((s) => s.classList.add('hidden'));
+    document.getElementById('screen-custom-draw').classList.remove('hidden');
+    mapAdapter.redraw();
+
+    const hint = document.getElementById('custom-draw-hint');
+    hint.textContent = message;
+    hint.classList.remove('hidden');
+    document.getElementById('btn-custom-confirm').disabled = !draft.status().canClose;
+}

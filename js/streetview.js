@@ -17,6 +17,7 @@
 //   - getRandomLocation(shape)      returns random location coords (no pano ID)
 //   - setVsStreetView(pano, id)     sets SV to specific pano for VS mode
 //   - resizeVisiblePanoramas()      forces all visible panoramas to recompute size
+//   - NoStreetViewInArea            thrown when the 20-attempt budget is exhausted
 // ============================================================
 
 import { state } from './state.js';
@@ -233,29 +234,50 @@ export function getRandomLocation(shape) {
 // LOCATION FINDING
 // ─────────────────────────────────────────────────────────────
 
-function tryRandomLocation(shape, attempt, resolve, reject) {
+/** Thrown when no usable Street View could be found in a shape after
+ *  the full attempt budget — distinct from a plain Error so callers
+ *  (js/round.js) can route this specific failure back to the draw
+ *  screen instead of leaving the player on a dead panorama. */
+export class NoStreetViewInArea extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'NoStreetViewInArea';
+    }
+}
+
+/** One string summarising why each of the 20 attempts failed — not a
+ *  change in retry count, just enough detail that the failure message
+ *  says *why* (no coverage vs. drifted outside the shape vs. a
+ *  photosphere) rather than a bare "failed after 20 attempts". */
+function summariseTally(tally) {
+    return `no coverage: ${tally.noPano}, outside area: ${tally.outsideShape}, photosphere: ${tally.photosphere}`;
+}
+
+function tryRandomLocation(shape, attempt, resolve, reject, tally = { noPano: 0, outsideShape: 0, photosphere: 0 }) {
     if (attempt >= 20) {
-        reject(new Error('Failed to find valid Street View after 20 attempts'));
+        reject(new NoStreetViewInArea(`No usable Street View found after 20 attempts (${summariseTally(tally)})`));
         return;
     }
 
     const randomLoc = randomPointInShape(shape);
     if (!randomLoc) {
         // Sampling budget exhausted for this attempt (a thin shape) — try again.
-        tryRandomLocation(shape, attempt + 1, resolve, reject);
+        tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
         return;
     }
 
     findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
-            tryRandomLocation(shape, attempt + 1, resolve, reject);
+            tally.noPano++;
+            tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
             return;
         }
 
         const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
         if (!containsPoint(pos, shape)) {
             // Found pano drifted outside the shape — resample.
-            tryRandomLocation(shape, attempt + 1, resolve, reject);
+            tally.outsideShape++;
+            tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
             return;
         }
         state.currentLocation = pos;
@@ -267,34 +289,37 @@ function tryRandomLocation(shape, attempt, resolve, reject) {
             () => {
                 // Photosphere detected after render — retry with new location
                 console.log('Retrying — photosphere detected after render');
-                tryRandomLocation(shape, attempt + 1, resolve, reject);
+                tally.photosphere++;
+                tryRandomLocation(shape, attempt + 1, resolve, reject, tally);
             }
         );
     }, reject);
 }
 
 // Find valid coords for preloading (returns lat/lng only, no pano)
-function findValidCoords(shape, attempt, resolve, reject) {
+function findValidCoords(shape, attempt, resolve, reject, tally = { noPano: 0, outsideShape: 0, photosphere: 0 }) {
     if (attempt >= 20) {
-        reject(new Error('Could not find valid Street View coords'));
+        reject(new NoStreetViewInArea(`Could not find valid Street View coords after 20 attempts (${summariseTally(tally)})`));
         return;
     }
 
     const randomLoc = randomPointInShape(shape);
     if (!randomLoc) {
-        findValidCoords(shape, attempt + 1, resolve, reject);
+        findValidCoords(shape, attempt + 1, resolve, reject, tally);
         return;
     }
 
     findNearestOutdoor(randomLoc, shape, (data) => {
         if (!data) {
-            findValidCoords(shape, attempt + 1, resolve, reject);
+            tally.noPano++;
+            findValidCoords(shape, attempt + 1, resolve, reject, tally);
             return;
         }
         const pos = { lat: data.location.latLng.lat(), lng: data.location.latLng.lng() };
         if (!containsPoint(pos, shape)) {
             // Found pano drifted outside the shape — resample.
-            findValidCoords(shape, attempt + 1, resolve, reject);
+            tally.outsideShape++;
+            findValidCoords(shape, attempt + 1, resolve, reject, tally);
             return;
         }
         resolve({ ...pos, pano: data.location.pano });
