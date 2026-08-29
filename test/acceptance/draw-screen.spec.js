@@ -19,27 +19,13 @@
 import { loadFeature, describeFeature } from '@amiceli/vitest-cucumber';
 import { expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { installLeafletFake } from '../support/fakes/leaflet.js';
+import { installLeafletFakeCapturingMap } from '../support/fakes/leaflet.js';
 import { initCustomDraw } from '../../js/custom-lobby.js';
 
 function loadIndexBody() {
     const html = readFileSync('index.html', 'utf-8');
     const match = html.match(/<body>([\s\S]*)<\/body>/);
     document.body.innerHTML = match[1];
-}
-
-/** Wraps the fake L.map so tests can reach the map instance
- *  js/custom-map.js creates internally (custom-lobby.js doesn't expose
- *  it — this reaches through the real seam a click event uses). */
-function installLeafletFakeCapturingMap() {
-    const fake = installLeafletFake();
-    let lastMap = null;
-    const originalMap = fake.map;
-    fake.map = (...args) => {
-        lastMap = originalMap(...args);
-        return lastMap;
-    };
-    return { L: fake, getLastMap: () => lastMap };
 }
 
 function isHidden(id) {

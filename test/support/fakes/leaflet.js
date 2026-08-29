@@ -91,6 +91,23 @@ export function createLeafletFake() {
     };
 }
 
+/**
+ * Installs a fake L that also remembers the last map it created — the
+ * usual need in a test is to reach the map instance some production
+ * code created internally (e.g. js/custom-map.js), which nothing
+ * exports directly. Returns { L, getLastMap() }.
+ */
+export function installLeafletFakeCapturingMap() {
+    const fake = installLeafletFake();
+    let lastMap = null;
+    const originalMap = fake.map;
+    fake.map = (...args) => {
+        lastMap = originalMap(...args);
+        return lastMap;
+    };
+    return { L: fake, getLastMap: () => lastMap };
+}
+
 /** Sets globalThis.L to a fresh fake and returns it — call in beforeEach. */
 export function installLeafletFake() {
     const fake = createLeafletFake();
