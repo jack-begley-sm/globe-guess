@@ -60,3 +60,33 @@ describe('renderResults', () => {
         expect(document.getElementById('final-total-score').textContent).toBe((3000 + 1500).toLocaleString());
     });
 });
+
+describe('resetGame ("Play Again")', () => {
+    it('keeps the shape and starts a new game directly, for a Custom area', async () => {
+        const { initResults, state } = await freshResults();
+        initResults();
+        const customShape = makeCustomShape([{ lat: 51, lng: 0 }, { lat: 51.36, lng: 0 }, { lat: 51, lng: 0.36 }]);
+        state.region = 'CUSTOM';
+        state.shape = customShape;
+
+        document.getElementById('btn-play-again').click();
+
+        // Redrawing a Custom area from scratch just to play it again
+        // would be a poor "Play Again" experience — the shape survives.
+        expect(state.region).toBe('CUSTOM');
+        expect(state.shape).toBe(customShape);
+        expect(document.getElementById('screen-results').classList.contains('hidden')).toBe(true);
+    });
+
+    it('returns to the landing screen and resets to WORLD, for a built-in region', async () => {
+        const { initResults, state } = await freshResults();
+        initResults();
+        state.region = 'UK';
+
+        document.getElementById('btn-play-again').click();
+
+        expect(state.region).toBe('WORLD');
+        expect(document.getElementById('screen-landing').classList.contains('hidden')).toBe(false);
+        expect(document.getElementById('screen-results').classList.contains('hidden')).toBe(true);
+    });
+});

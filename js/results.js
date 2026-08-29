@@ -7,6 +7,9 @@
 //   - js/result-map.js  (shows detail map in modal)
 //   - js/awards.js      (persists solo awards)
 //   - js/user.js        (reads player name)
+//   - js/round.js       (startGame, for "Play Again" on a Custom area —
+//     round.js also imports renderResults from here, a safe circular
+//     import since neither call happens at module-evaluation time)
 //
 // USED BY:
 //   - js/round.js       (calls renderResults)
@@ -14,7 +17,8 @@
 //
 // KEY FUNCTIONS:
 //   - renderResults()    populates the final scoreboard
-//   - resetGame()        returns to landing screen and resets state
+//   - resetGame()        "Play Again": keeps a Custom area and restarts
+//     a new game; every other region returns to the landing screen
 // ============================================================
 
 import { state, resetState } from './state.js';
@@ -22,6 +26,7 @@ import { showResultOnMap } from './result-map.js';
 import { saveSoloAwards } from './awards.js';
 import { getUser } from './user.js';
 import { SCORING } from './config.js';
+import { startGame } from './round.js';
 
 export function initResults() {
     const playAgainBtn = document.getElementById('btn-play-again');
@@ -213,6 +218,16 @@ function showDetailModal(roundData) {
 }
 
 function resetGame() {
+    // A drawn Custom area is expensive to recreate (redraw the whole
+    // shape) — "Play Again" keeps it and starts straight into a new
+    // game with the same area. Every other region returns to the
+    // landing screen as before, via resetState()'s full reset to WORLD.
+    if (state.region === 'CUSTOM' && state.shape) {
+        document.getElementById('screen-results').classList.add('hidden');
+        startGame();
+        return;
+    }
+
     resetState();
     document.getElementById('screen-results').classList.add('hidden');
     document.getElementById('screen-landing').classList.remove('hidden');
