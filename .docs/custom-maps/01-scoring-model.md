@@ -121,6 +121,24 @@ The knock-on effects to check when S04 lands:
   than leaving a misleading constant; `js/vs-round.js:5` imports `MAP_SETTINGS`,
   so check what else it uses from there first.
 
+## Item 24 decision (2026-08-29)
+
+**`CURVE_EXPONENT` stays at `p = 2`.** This was **not** decided from the
+five-World/five-UK/one-VS/one-Stitch-Up playtest this section calls for —
+Jack chose to skip that playtest and keep the shipped default rather than
+block the list on it. Record this plainly rather than let it read as a
+played-and-confirmed decision: if World ends up feeling too soft in practice
+(a 2000km miss now scoring 3026 instead of 0 is the biggest behavioural
+change), revisit `p` then, informed by real play rather than a table.
+
+The two "knock-on effects" above were addressed without a played round:
+Stitch Up's `su-host.js:394` (`5000 - guesserScore`) works arithmetically
+and was left alone per this doc's own note; the awards audit (item 23,
+06-list-of-items.md) found and documented — but did not fix — four SOLO
+awards with now-stale absolute-km thresholds, deferred for the same reason
+`p` wasn't played in: choosing new numbers without playing first would be a
+guess dressed up as a decision.
+
 ## Out-of-polygon guesses
 
 Blocked at the map (decision 3), so the scorer never sees `r > 1` from a legal
