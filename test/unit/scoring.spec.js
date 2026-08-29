@@ -17,7 +17,7 @@ import { scoreFromDistance, calculateScore } from '../../js/scoring.js';
 import { createRng } from '../support/rng.js';
 
 describe('scoreFromDistance', () => {
-    it.each([0, -1, NaN, undefined])('throws for scaleKm = %s', (scaleKm) => {
+    it.each([0, -1, NaN, undefined, Infinity])('throws for scaleKm = %s', (scaleKm) => {
         expect(() => scoreFromDistance(10, scaleKm)).toThrow();
     });
 
@@ -25,8 +25,18 @@ describe('scoreFromDistance', () => {
         expect(scoreFromDistance(0, 1000)).toBe(5000);
     });
 
+    it('is exactly MAX_SCORE (5000) for a negative d (bounded, never above it)', () => {
+        expect(scoreFromDistance(-450, 1000)).toBe(5000);
+    });
+
+    it('is 0 for a non-finite d (NaN or Infinity), not NaN', () => {
+        expect(scoreFromDistance(NaN, 1000)).toBe(0);
+        expect(scoreFromDistance(Infinity, 1000)).toBe(0);
+    });
+
     it('is exactly 0 at d = 0.45 * scaleKm (the cutoff)', () => {
         expect(scoreFromDistance(450, 1000)).toBe(0);
+        expect(scoreFromDistance(18, 40)).toBe(0); // a second scale, same ratio
     });
 
     it('is 0 well beyond the cutoff', () => {
@@ -60,7 +70,7 @@ describe('calculateScore', () => {
     const HERE = { lat: 51, lng: 0 };
     const THERE = { lat: 51, lng: 0.1 }; // a few km away
 
-    it.each([undefined, 0, -1, NaN])('throws when scaleKm is %s, naming it in the message', (scaleKm) => {
+    it.each([undefined, 0, -1, NaN, Infinity])('throws when scaleKm is %s, naming it in the message', (scaleKm) => {
         expect(() => calculateScore(HERE, THERE, 10, 90, false, 20, scaleKm)).toThrow(/scaleKm/);
     });
 

@@ -19,11 +19,11 @@
 import { MAX_SCORE, SCORING } from './config.js';
 
 export function calculateScore(guessLatLng, actualLatLng, timeTaken, timeLimit, speedBonusEnabled, speedBonusPct, scaleKm) {
-    if (!(scaleKm > 0)) {
+    if (!Number.isFinite(scaleKm) || scaleKm <= 0) {
         // Validated before the null-guess branch below, so an un-migrated
         // call site throws even on a timeout round instead of silently
         // scoring wrong. See S03-relative-scorer.md's "Watch out for".
-        throw new Error(`calculateScore: scaleKm must be a positive number, got ${scaleKm}`);
+        throw new Error(`calculateScore: invalid scaleKm ${scaleKm}`);
     }
     if (!guessLatLng) {
         return { distanceKm: Infinity, baseScore: 0, speedScore: 0, totalScore: 0 };
@@ -75,9 +75,11 @@ function deg2rad(deg) {
  * @returns {number}
  */
 export function scoreFromDistance(d, scaleKm) {
-    if (!(scaleKm > 0)) {
-        throw new Error(`scoreFromDistance: scaleKm must be a positive number, got ${scaleKm}`);
+    if (!Number.isFinite(scaleKm) || scaleKm <= 0) {
+        throw new Error(`scoreFromDistance: invalid scaleKm ${scaleKm}`);
     }
+    if (!Number.isFinite(d)) return 0;
+    if (d <= 0) return MAX_SCORE;
 
     const r = d / scaleKm;
     if (r >= SCORING.CUTOFF_RATIO) return 0;
