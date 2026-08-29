@@ -41,17 +41,17 @@ describeFeature(feature, ({ Scenario }) => {
         let distKm, ukScore;
         Given('a Classic game in the UK region', () => {});
         When('the player guesses 100 km from the location', () => { distKm = 100; });
-        // 3283, not the doc's illustrative 3282: real UK scaleKm from
-        // getShape (densified diameterKm, ~1171.4) differs from the
-        // doc's rounded reference D=1171 by under half a km, a
-        // sub-1-point rounding difference. Every other scenario in this
-        // feature matches the doc's numbers exactly.
-        Then('they score 3283 points', () => {
+        // Recomputed against the real getShape('UK')/getShape('WORLD')
+        // scaleKm and the live SCORING.CURVE_EXPONENT (1.5, lowered from
+        // the originally-shipped 2 after playing a small Custom area —
+        // see js/config.js), not copied from any doc's illustrative
+        // numbers, which still assume the old exponent.
+        Then('they score 3647 points', () => {
             ukScore = scoreAt(distKm, getShape('UK').scaleKm);
-            expect(ukScore).toBe(3283);
+            expect(ukScore).toBe(3647);
         });
-        And('the same guess in the World region would score 4890 points', () => {
-            expect(scoreAt(distKm, getShape('WORLD').scaleKm)).toBe(4890);
+        And('the same guess in the World region would score 4917 points', () => {
+            expect(scoreAt(distKm, getShape('WORLD').scaleKm)).toBe(4917);
             expect(scoreAt(distKm, getShape('WORLD').scaleKm)).toBeGreaterThan(ukScore);
         });
     });
@@ -60,8 +60,8 @@ describeFeature(feature, ({ Scenario }) => {
         let distKm;
         Given('a Classic game in the World region', () => {});
         When('the player guesses 4000 km from the location', () => { distKm = 4000; });
-        Then('they score 1545 points', () => {
-            expect(scoreAt(distKm, getShape('WORLD').scaleKm)).toBe(1545);
+        Then('they score 2072 points', () => {
+            expect(scoreAt(distKm, getShape('WORLD').scaleKm)).toBe(2072);
         });
     });
 
@@ -97,11 +97,11 @@ describeFeature(feature, ({ Scenario }) => {
             guesserScore = scoreAt(4000, getShape('WORLD').scaleKm);
             setterScore = setterScoreFromGuesserScore(guesserScore, false);
         });
-        Then('the guesser scores 1545 points', () => {
-            expect(guesserScore).toBe(1545);
+        Then('the guesser scores 2072 points', () => {
+            expect(guesserScore).toBe(2072);
         });
-        And('the setter scores 3455 points', () => {
-            expect(setterScore).toBe(3455);
+        And('the setter scores 2928 points', () => {
+            expect(setterScore).toBe(2928);
         });
     });
 });

@@ -7,6 +7,6 @@ Feature: Scores scale to the size of the play area
 
     Examples:
       | diameter | miss | score |
-      | 20015    | 2000 | 3026  |
-      | 1171     | 100  | 3282  |
+      | 20015    | 2000 | 3431  |
+      | 1171     | 100  | 3647  |
       | 1171     | 600  | 0     |

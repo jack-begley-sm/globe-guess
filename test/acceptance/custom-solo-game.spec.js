@@ -159,11 +159,13 @@ describeFeature(feature, ({ Scenario }) => {
             const result = calculateScore(guessAtDistanceKm(4), HOME, 0, 0, false, 0, 40);
             score = result.totalScore;
         });
-        Then('they score 3025 points', () => {
+        Then('they score 3430 points', () => {
             // Recomputed from the formula, not copied from the doc:
-            // r = 4/40 = 0.1 -> 5000*(1 - 0.1/0.45)^2.
-            const expected = Math.round(5000 * Math.pow(1 - (4 / 40) / 0.45, 2));
-            expect(expected).toBe(3025);
+            // r = 4/40 = 0.1 -> 5000*(1 - 0.1/0.45)^1.5. Exponent 1.5, not
+            // the originally-shipped 2 — lowered after playing a small
+            // Custom area (see js/config.js's SCORING.CURVE_EXPONENT note).
+            const expected = Math.round(5000 * Math.pow(1 - (4 / 40) / 0.45, 1.5));
+            expect(expected).toBe(3430);
             expect(score).toBe(expected);
         });
     });
@@ -216,13 +218,18 @@ describeFeature(feature, ({ Scenario }) => {
             baseScore = result.baseScore;
             speedScore = result.speedScore;
         });
-        Then('their base score is 3025', () => {
-            expect(baseScore).toBe(3025);
+        Then('their base score is 3430', () => {
+            expect(baseScore).toBe(3430);
         });
-        And('their speed bonus is 454', () => {
-            // Recomputed: 3025 * 0.20 * (1 - 15/60) = 3025 * 0.20 * 0.75.
-            const expected = Math.round(3025 * 0.2 * 0.75);
-            expect(expected).toBe(454);
+        And('their speed bonus is 514', () => {
+            // Recomputed from the same RAW (pre-round) distance score
+            // calculateScore multiplies the speed bonus against internally
+            // — using the already-rounded baseScore (3430) here instead
+            // gives 515, not the real 514, since rounding happens after
+            // the speed-bonus multiply, not before it.
+            const rawBase = 5000 * Math.pow(1 - (4 / 40) / 0.45, 1.5);
+            const expected = Math.round(rawBase * 0.2 * 0.75);
+            expect(expected).toBe(514);
             expect(speedScore).toBe(expected);
         });
     });
