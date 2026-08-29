@@ -6,7 +6,8 @@ import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
 import { getShape } from './geo/shapes.js';
- 
+import { drawShapeOverlay, guardClick } from './map-overlay.js';
+
 let timerInterval;
 let autoAdvanceTimeout;
 let vsMap = null;
@@ -14,6 +15,7 @@ let vsMarker = null;
 let revealMap = null;
 let isMapLocked = false;
 let nextVsLocationPromise = null;
+let vsMapOverlay = null;
  
  
 export function startVsRound() {
@@ -38,7 +40,7 @@ export function startVsRound() {
         setupHostRound();
         // Preload next location in background if not last round
         if (vsState.currentRound < vsState.totalRounds) {
-            nextVsLocationPromise = getRandomLocation(vsState.region);
+            nextVsLocationPromise = getRandomLocation(vsState.shape);
         }
     }
 }
@@ -48,7 +50,7 @@ async function setupHostRound() {
         // Use preloaded if available
         const locationData = nextVsLocationPromise
             ? await nextVsLocationPromise
-            : await getRandomLocation(vsState.region);
+            : await getRandomLocation(vsState.shape);
  
         nextVsLocationPromise = null; // consume it
 
@@ -298,17 +300,22 @@ export function initVsMap() {
     }).setView([20, 0], MAP_SETTINGS.INITIAL_ZOOM);
  
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(vsMap);
- 
+
+    // The map is created once and reused across every round, each with
+    // its own shape — guardClick reads vsState.shape at click time via
+    // this getter rather than a value fixed when the guard was made.
+    const guardedPlaceVsMarker = guardClick(() => vsState.shape, (e) => placeVsMarker(e.latlng));
+
     vsMap.on('click', (e) => {
         if (isMapLocked) return;
-        
+
         const widget = document.getElementById('vs-guess-map-widget');
         if (widget.classList.contains('collapsed')) {
             widget.classList.remove('collapsed');
             widget.classList.add('expanded');
             setTimeout(() => vsMap.invalidateSize(), 300);
         } else {
-            placeVsMarker(e.latlng);
+            guardedPlaceVsMarker(e);
         }
     });
  
@@ -329,14 +336,17 @@ function placeVsMarker(latlng) {
     // -180..180 (e.g. 380 instead of 20). Wrap here so every consumer of
     // currentGuessLatLng — scoring, network payload, the reveal map — gets a
     // normalized value instead of one that renders in a duplicate world copy.
+    // Containment against vsState.shape is already enforced by guardClick
+    // before this ever runs.
     latlng = latlng.wrap();
+    const point = { lat: latlng.lat, lng: latlng.lng };
 
     if (vsMarker) {
         vsMarker.setLatLng(latlng);
     } else {
         vsMarker = L.marker(latlng).addTo(vsMap);
     }
-    vsState.currentGuessLatLng = { lat: latlng.lat, lng: latlng.lng };
+    vsState.currentGuessLatLng = point;
     document.getElementById('btn-vs-submit-guess').disabled = false;
 }
  
@@ -348,6 +358,15 @@ function resetVsMap() {
     if (vsMarker) {
         vsMap.removeLayer(vsMarker);
         vsMarker = null;
+    }
+    if (vsMapOverlay) {
+        vsMapOverlay.remove();
+        vsMapOverlay = null;
+    }
+    if (vsMap && vsState.shape) {
+        vsMapOverlay = drawShapeOverlay(vsMap, vsState.shape);
+        const { south, west, north, east } = vsState.shape.bbox;
+        vsMap.fitBounds([[south, west], [north, east]], { padding: [20, 20] });
     }
     vsState.currentGuessLatLng = null;
     document.getElementById('btn-vs-submit-guess').disabled = true;

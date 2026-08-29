@@ -366,10 +366,10 @@ export function handleSetterConfirm(panoId, latLng, autoPlaced = false) {
     });
 }
 
-export async function autoPlaceLocation(region) {
+export async function autoPlaceLocation(shape) {
     const { getRandomLocation } = await import('./streetview.js');
     try {
-        const loc = await getRandomLocation(region);
+        const loc = await getRandomLocation(shape);
         handleSetterConfirm(loc.pano, { lat: loc.lat, lng: loc.lng }, true);
     } catch (e) {
         console.error('Failed to auto-place', e);

@@ -5,8 +5,7 @@
 // DEPENDENCIES:
 //   - js/state.js       (writes guessLatLng)
 //   - js/config.js      (MAP_SETTINGS)
-//   - js/map-overlay.js (drawShapeOverlay, for the play-area outline/mask)
-//   - js/geo/polygon.js (containsPoint, to reject outside taps)
+//   - js/map-overlay.js (drawShapeOverlay, guardClick)
 //
 // USED BY:
 //   - js/round.js       (initializes and resets map each round)
@@ -22,8 +21,7 @@
 
 import { state } from './state.js';
 import { MAP_SETTINGS } from './config.js';
-import { drawShapeOverlay } from './map-overlay.js';
-import { containsPoint } from './geo/polygon.js';
+import { drawShapeOverlay, guardClick } from './map-overlay.js';
 
 let map;
 let resultMiniMap;
@@ -42,16 +40,21 @@ export function initMap() {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+    // The map is created once and reused across every round, each with
+    // its own shape — guardClick reads currentShape at click time via
+    // this getter rather than a value fixed when the guard was made.
+    const guardedPlaceMarker = guardClick(() => currentShape, (e) => placeMarker(e.latlng));
+
     map.on('click', (e) => {
         if (isLocked) return;
-        
+
         const widget = document.getElementById('guess-map-widget');
         if (widget.classList.contains('collapsed')) {
             widget.classList.remove('collapsed');
             widget.classList.add('expanded');
             setTimeout(() => map.invalidateSize(), 300);
         } else {
-            placeMarker(e.latlng);
+            guardedPlaceMarker(e);
         }
     });
 
@@ -70,16 +73,10 @@ function placeMarker(latlng) {
     // Panning the map more than one world-width gives longitudes outside
     // -180..180 (e.g. 380 instead of 20). Wrap here so the result map's
     // fitBounds/marker placement doesn't render a duplicate world copy far
-    // from the actual guess, then normalise into the shape's frame.
+    // from the actual guess. Containment against currentShape is already
+    // enforced by guardClick before this ever runs.
     latlng = latlng.wrap();
     const point = { lat: latlng.lat, lng: latlng.lng };
-
-    if (currentShape && !containsPoint(point, currentShape)) {
-        // Outside the play area: no marker, no state write, submit
-        // button's disabled state left exactly as it was — a stray tap
-        // must not clear an already-valid guess.
-        return;
-    }
 
     if (marker) {
         marker.setLatLng(latlng);

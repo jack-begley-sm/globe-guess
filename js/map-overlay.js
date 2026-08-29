@@ -17,7 +17,7 @@
 // KEY FUNCTIONS:
 //   - drawShapeOverlay(map, shape)   outline + world-with-a-hole mask;
 //     no-op for WORLD (dimming nothing is the correct render)
-//   - guardClick(shape, handler)     wraps a click handler so a tap
+//   - guardClick(getShape, handler)  wraps a click handler so a tap
 //     outside the shape never reaches it
 // ============================================================
 import { containsPoint } from './geo/polygon.js';
@@ -50,16 +50,24 @@ export function drawShapeOverlay(map, shape) {
 }
 
 /**
- * Wraps `handler` so it only fires for a click inside `shape` — a tap
- * outside is dropped before the caller ever sees it.
- * @param {import('./geo/polygon.js').Shape} shape
+ * Wraps `handler` so it only fires for a click inside the CURRENT
+ * shape — a tap outside is dropped before the caller ever sees it.
+ * Takes a `getShape()` accessor rather than a fixed shape because the
+ * guess map is created once and reused across many rounds, each with
+ * its own shape; re-registering a fresh `map.on('click', ...)` every
+ * round would stack listeners instead of replacing one, so the guard
+ * itself must read whatever shape is current at click time.
+ * @param {() => (import('./geo/polygon.js').Shape | null)} getShape
  * @param {(e: object) => void} handler
  * @returns {(e: object) => void}
  */
-export function guardClick(shape, handler) {
+export function guardClick(getShape, handler) {
     return (e) => {
-        const point = { lat: e.latlng.lat, lng: e.latlng.lng };
-        if (!containsPoint(point, shape)) return;
+        const shape = getShape();
+        if (shape) {
+            const point = { lat: e.latlng.lat, lng: e.latlng.lng };
+            if (!containsPoint(point, shape)) return;
+        }
         handler(e);
     };
 }

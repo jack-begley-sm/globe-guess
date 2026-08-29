@@ -62,7 +62,7 @@ describe('guardClick', () => {
 
     it('calls the handler for a click inside the shape', () => {
         let called = null;
-        const guarded = guardClick(TRIANGLE, (e) => { called = e; });
+        const guarded = guardClick(() => TRIANGLE, (e) => { called = e; });
         const e = { latlng: L.latLng(51.3, 0.5) };
         guarded(e);
         expect(called).toBe(e);
@@ -70,8 +70,27 @@ describe('guardClick', () => {
 
     it('drops a click outside the shape — the handler never runs', () => {
         let called = false;
-        const guarded = guardClick(TRIANGLE, () => { called = true; });
+        const guarded = guardClick(() => TRIANGLE, () => { called = true; });
         guarded({ latlng: L.latLng(0, 0) });
         expect(called).toBe(false);
+    });
+
+    it('takes a getter, not a fixed shape, so it tracks a shape that changes after the guard is created', () => {
+        let shape = TRIANGLE;
+        let called = false;
+        const guarded = guardClick(() => shape, () => { called = true; });
+        guarded({ latlng: L.latLng(0, 0) }); // outside the triangle
+        expect(called).toBe(false);
+
+        shape = getShape('WORLD'); // a later round switches to a region containing (0,0)
+        guarded({ latlng: L.latLng(0, 0) });
+        expect(called).toBe(true);
+    });
+
+    it('passes the click through when there is no current shape yet', () => {
+        let called = false;
+        const guarded = guardClick(() => null, () => { called = true; });
+        guarded({ latlng: L.latLng(0, 0) });
+        expect(called).toBe(true);
     });
 });

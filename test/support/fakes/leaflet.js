@@ -87,6 +87,8 @@ export function createLeafletFake() {
         polygon: (...args) => makeLayer('polygon', args),
         circleMarker: (...args) => makeLayer('circleMarker', args),
         marker: (...args) => makeLayer('marker', args),
+        polyline: (...args) => makeLayer('polyline', args),
+        divIcon: (opts) => ({ kind: 'divIcon', opts }),
         latLng: makeLatLng,
     };
 }
