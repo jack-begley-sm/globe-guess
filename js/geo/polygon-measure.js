@@ -14,6 +14,7 @@
 //
 // KEY FUNCTIONS:
 //   - densifyRing(ring, stepDeg)   boundary sample, closing edge included
+//   - diameterKm(ring, stepDeg)    max pairwise great-circle distance
 // ============================================================
 
 /**
@@ -44,4 +45,38 @@ export function densifyRing(ring, stepDeg) {
         }
     }
     return out;
+}
+
+const EARTH_RADIUS_KM = 6371;
+
+/** Great-circle distance in km between two lat/lng points (degrees). */
+function haversineKm(a, b) {
+    const toRad = (d) => (d * Math.PI) / 180;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const s =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+}
+
+/**
+ * Max great-circle distance between any two points on `ring`'s boundary,
+ * sampled by densifying at `stepDeg` first. Vertex-only would miss the
+ * true diameter of a wide ring like WORLD (~14455 vs ~20015) — see the
+ * regression test and 01-scoring-model.md.
+ * @param {import('./polygon.js').Ring} ring
+ * @param {number} stepDeg
+ * @returns {number} kilometres
+ */
+export function diameterKm(ring, stepDeg) {
+    const points = densifyRing(ring, stepDeg);
+    let max = 0;
+    for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+            const d = haversineKm(points[i], points[j]);
+            if (d > max) max = d;
+        }
+    }
+    return max;
 }
