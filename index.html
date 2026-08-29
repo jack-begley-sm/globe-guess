@@ -30,6 +30,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700&family=Outfit:wght@400;600&family=DM+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/awards.css">
+    <link rel="stylesheet" href="./css/custom.css">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -59,6 +60,7 @@
                 </div>
                 <div class="mode-selector">
                     <button id="btn-mode-classic" class="btn-mode active">CLASSIC</button>
+                    <button id="btn-mode-custom" class="btn-mode active">🖌️ CUSTOM</button>
                     <button id="btn-mode-vs" class="btn-mode active">VERSUS</button>
                     <button id="btn-mode-su" class="btn-mode active">STITCH UP</button>
                     <button id="btn-mode-coop" class="btn-mode active">CO-OP</button>
@@ -149,7 +151,7 @@
                         </div>
                     </section>
 
-                    <section class="config-section">
+                    <section class="config-section" id="section-region">
                         <label>REGION</label>
                         <div class="region-grid">
                             <button data-region="WORLD" class="active">🌍 World</button>
@@ -161,11 +163,25 @@
                             <button data-region="OCEANIA">🌏 Oceania</button>
                         </div>
                     </section>
+
+                    <section class="config-section hidden" id="custom-area-summary"></section>
                 </div>
 
                 <div class="lobby-footer">
                     <button id="btn-start-classic" class="btn-start">START GAME</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- SCREEN: CUSTOM DRAW -->
+        <div id="screen-custom-draw" class="screen hidden">
+            <div id="custom-map"></div>
+            <button id="btn-custom-back" class="btn-back custom-draw-back"><i data-lucide="arrow-left"></i></button>
+            <div id="custom-draw-hint" class="custom-draw-hint hidden"></div>
+            <div class="custom-draw-controls">
+                <button id="btn-custom-undo">UNDO</button>
+                <button id="btn-custom-clear">CLEAR</button>
+                <button id="btn-custom-confirm" class="btn-start" disabled>CONFIRM AREA</button>
             </div>
         </div>
 

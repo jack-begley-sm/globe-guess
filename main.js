@@ -18,6 +18,7 @@ import { getSession, clearSession } from './js/user.js';
 import { initHost } from './js/vs-host.js';
 import { initSuHost } from './js/su-host.js';
 import { initAwards } from './js/awards.js';
+import { initCustomDraw, resetClassicLobbyRegionUI } from './js/custom-lobby.js';
 
 import './css/base.css';
 import './css/layout.css';
@@ -44,6 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (classicBtn) {
         classicBtn.addEventListener('click', () => {
+            // A previous Custom-mode detour may have left the region-grid
+            // hidden behind an area summary — Classic entered directly
+            // must not inherit that.
+            resetClassicLobbyRegionUI();
             landingScreen.classList.add('hidden');
             lobbyScreen.classList.remove('hidden');
         });
@@ -238,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLobby();
     initVsSetup();
     initSuSetup();
+    initCustomDraw();
     initRoundEvents();
     initResults();
 
