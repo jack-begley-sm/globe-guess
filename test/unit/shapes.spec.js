@@ -12,6 +12,7 @@
 // ============================================================
 import { describe, it, expect } from 'vitest';
 import { getShape, makeCustomShape } from '../../js/geo/shapes.js';
+import { REGIONS, REGION_LABELS } from '../../js/config.js';
 
 describe('getShape', () => {
     it('returns the identical object on repeat calls (memoised)', () => {
@@ -32,6 +33,21 @@ describe('getShape', () => {
 
     it('throws for an unknown region id', () => {
         expect(() => getShape('MOON')).toThrow();
+    });
+
+    it('throws for an inherited-but-not-own property name (prototype pollution guard)', () => {
+        expect(() => getShape('constructor')).toThrow();
+        expect(() => getShape('toString')).toThrow();
+    });
+
+    it('is immutable — mutating the returned shape or its ring throws', () => {
+        const shape = getShape('UK');
+        expect(() => { shape.scaleKm = 1; }).toThrow();
+        expect(() => { shape.ring[0].lat = 999; }).toThrow();
+    });
+
+    it('has a label for every region (REGION_LABELS cannot silently drift from REGIONS)', () => {
+        expect(Object.keys(REGION_LABELS).sort()).toEqual(Object.keys(REGIONS).sort());
     });
 });
 
@@ -57,5 +73,18 @@ describe('makeCustomShape', () => {
     it('throws for a ring spanning 360 degrees or more once unrolled', () => {
         const wrapped = [{ lat: 0, lng: -180 }, { lat: 0, lng: 180 }, { lat: 10, lng: 0 }];
         expect(() => makeCustomShape(wrapped)).toThrow();
+    });
+
+    it('unrolls a ring drawn across the antimeridian instead of rejecting it', () => {
+        const acrossDateLine = [{ lat: 0, lng: 178 }, { lat: 0, lng: -179 }, { lat: 10, lng: -179 }, { lat: 10, lng: 178 }];
+        const shape = makeCustomShape(acrossDateLine);
+        expect(shape.bbox.east).toBeGreaterThan(180);
+        expect(shape.scaleKm).toBeGreaterThan(0);
+    });
+
+    it('is immutable — mutating the returned shape or its ring throws', () => {
+        const shape = makeCustomShape(SQUARE);
+        expect(() => { shape.scaleKm = 1; }).toThrow();
+        expect(() => { shape.ring[0].lat = 999; }).toThrow();
     });
 });

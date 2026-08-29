@@ -34,18 +34,18 @@ const cache = new Map();
  */
 export function getShape(regionId) {
     if (cache.has(regionId)) return cache.get(regionId);
-    if (!REGIONS[regionId]) {
+    if (!Object.hasOwn(REGIONS, regionId)) {
         throw new Error(`getShape: unknown region '${regionId}'`);
     }
 
     const ring = REGION_RINGS[regionId];
-    const shape = {
+    const shape = Object.freeze({
         id: regionId,
         label: REGION_LABELS[regionId],
-        ring,
-        bbox: ringBbox(ring),
+        ring: Object.freeze(ring.map((p) => Object.freeze({ ...p }))),
+        bbox: Object.freeze(ringBbox(ring)),
         scaleKm: diameterKm(ring, CUSTOM_MAP.DENSIFY_STEP_DEG),
-    };
+    });
     cache.set(regionId, shape);
     return shape;
 }
@@ -55,7 +55,10 @@ export function getShape(regionId) {
  * rejects a ring that could never be a legal play area: fewer than 3
  * vertices, an unrolled span of 360 degrees or more, or a self-crossing
  * boundary. (These are also enforced live at draw time in
- * custom-draft.js — this is the last-line guard for the Shape boundary.)
+ * custom-draft.js — this is the last-line guard for the Shape boundary,
+ * not a full re-check; it does not re-enforce the max-vertex limit,
+ * since that's only meaningful while every ring comes from the local
+ * drawing UI. Revisit if a ring ever arrives over the network.)
  * @param {import('./polygon.js').Ring} ring - as drawn, not yet unrolled
  * @returns {import('./polygon.js').Shape}
  */
@@ -73,11 +76,11 @@ export function makeCustomShape(ring) {
         throw new Error('makeCustomShape: ring is self-crossing');
     }
 
-    return {
+    return Object.freeze({
         id: 'CUSTOM',
         label: 'Custom',
-        ring: unrolled,
-        bbox,
+        ring: Object.freeze(unrolled.map((p) => Object.freeze({ ...p }))),
+        bbox: Object.freeze(bbox),
         scaleKm: diameterKm(unrolled, CUSTOM_MAP.DENSIFY_STEP_DEG),
-    };
+    });
 }

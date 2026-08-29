@@ -10,6 +10,7 @@
 //   - js/lobby.js
 //   - js/streetview.js
 //   - js/scoring.js
+//   - js/geo/shapes.js
 //
 // KEY FUNCTIONS:
 //   - None (Exports constants)
