@@ -7,6 +7,7 @@ import { vsState } from './vs-state.js';
 import { getUser, setUser } from './user.js';
 import { initHost, kickPlayer as hostKickPlayer, broadcastEvent } from './vs-host.js';
 import { startVsRound } from './vs-round.js';
+import { getShape } from './geo/shapes.js';
 
 const GITHUB_PAGES_URL = 'https://jack-begley-sm.github.io/globe-guess';
 
@@ -103,6 +104,7 @@ async function handleSetupNext() {
 
     const regionBtn = document.querySelector('#vs-region-grid button.active');
     vsState.region = regionBtn.dataset.region;
+    vsState.shape = getShape(vsState.region);
 
     // Re-hosting an existing room (e.g. "Play Again" after a game ends) —
     // keep the same room code, peer connection, and player list instead of

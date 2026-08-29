@@ -6,6 +6,7 @@
 //   - js/state.js       (writes initial config)
 //   - js/user.js        (reads/writes player name)
 //   - js/round.js       (calls startGame)
+//   - js/geo/shapes.js  (getShape, to set state.shape alongside region)
 //
 // USED BY:
 //   - main.js           (initializes lobby events)
@@ -18,6 +19,7 @@
 import { state } from './state.js';
 import { startGame } from './round.js';
 import { getUser, setUser } from './user.js';
+import { getShape } from './geo/shapes.js';
 
 export function initLobby() {
     const startBtn = document.getElementById('btn-start-classic');
@@ -114,6 +116,7 @@ function handleStart() {
         
     const regionBtn = document.querySelector('.region-grid button.active');
     state.region = regionBtn.dataset.region;
+    state.shape = getShape(state.region);
 
     // Transition
     document.getElementById('screen-lobby').classList.add('hidden');
