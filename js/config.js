@@ -11,12 +11,16 @@
 //   - js/streetview.js
 //   - js/scoring.js
 //   - js/geo/shapes.js
+//   - main.js           (VERSION, shown in the on-screen version tag)
 //
 // KEY FUNCTIONS:
 //   - None (Exports constants)
 // ============================================================
 
-export const VERSION = '1.6';
+// Single source of truth for the app version shown on the landing screen.
+// index.html's #version-display starts empty; main.js fills it in from
+// here on load — bump only this line, nowhere else.
+export const VERSION = '1.7';
 
 export const REGIONS = {
     WORLD:    { lat: [-60, 70],   lng: [-180, 180], radius: 200000 },
