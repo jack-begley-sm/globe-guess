@@ -36,3 +36,7 @@ export const MAP_SETTINGS = {
     INITIAL_ZOOM: 2,
     MAX_GUESS_DISTANCE: 2000 // km for zero score
 };
+
+export const CUSTOM_MAP = {
+    SAMPLE_ATTEMPTS: 60 // rejection-sampling budget for randomPointInShape
+};

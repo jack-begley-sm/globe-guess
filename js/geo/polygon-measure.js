@@ -1,21 +1,25 @@
 // ============================================================
 // FILE: js/geo/polygon-measure.js
-// PURPOSE: Pure ring measurement — boundary densification (and, in
-//          later items, diameter/area/random-point sampling) split
-//          out of js/geo/polygon.js to keep files under the 150-line
+// PURPOSE: Ring measurement and sampling — boundary densification,
+//          diameter, random-point rejection sampling — split out of
+//          js/geo/polygon.js to keep files under the 150-line
 //          CLAUDE.md limit. No DOM, no Leaflet, no state. See
 //          .docs/custom-maps/02-geometry-contracts.md for the spec.
 //
 // DEPENDENCIES:
-//   - none
+//   - js/geo/polygon.js (containsPoint, for randomPointInShape)
+//   - js/config.js      (CUSTOM_MAP.SAMPLE_ATTEMPTS)
 //
 // USED BY:
 //   - js/geo/shapes.js (planned, item 14) — diameterKm feeds scaleKm
 //
 // KEY FUNCTIONS:
-//   - densifyRing(ring, stepDeg)   boundary sample, closing edge included
-//   - diameterKm(ring, stepDeg)    max pairwise great-circle distance
+//   - densifyRing(ring, stepDeg)        boundary sample, closing edge included
+//   - diameterKm(ring, stepDeg)         max pairwise great-circle distance
+//   - randomPointInShape(shape, rng)    rejection sampling, null on exhaustion
 // ============================================================
+import { containsPoint } from './polygon.js';
+import { CUSTOM_MAP } from '../config.js';
 
 /**
  * Splits every edge of `ring` (including the closing edge from the
@@ -79,4 +83,25 @@ export function diameterKm(ring, stepDeg) {
         }
     }
     return max;
+}
+
+/**
+ * Rejection sampling: draws uniformly from `shape.bbox` (degrees, not
+ * area-weighted — matches the existing pole-oversampling behaviour of
+ * `generateRandomLatLng` in js/streetview.js, deliberately not fixed
+ * here) up to `CUSTOM_MAP.SAMPLE_ATTEMPTS` times, testing containment.
+ * @param {import('./polygon.js').Shape} shape
+ * @param {() => number} [rng] - defaults to Math.random; inject for tests
+ * @returns {import('./polygon.js').LatLng | null}
+ */
+export function randomPointInShape(shape, rng = Math.random) {
+    const { south, north, west, east } = shape.bbox;
+    for (let i = 0; i < CUSTOM_MAP.SAMPLE_ATTEMPTS; i++) {
+        const point = {
+            lat: south + rng() * (north - south),
+            lng: west + rng() * (east - west),
+        };
+        if (containsPoint(point, shape)) return point;
+    }
+    return null;
 }

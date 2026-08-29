@@ -11,8 +11,15 @@
 //   - npm test
 // ============================================================
 import { describe, it, expect } from 'vitest';
-import { densifyRing, diameterKm } from '../../js/geo/polygon-measure.js';
-import { REGIONS } from '../../js/config.js';
+import { densifyRing, diameterKm, randomPointInShape } from '../../js/geo/polygon-measure.js';
+import { unrollRing, ringBbox, containsPoint } from '../../js/geo/polygon.js';
+import { REGIONS, CUSTOM_MAP } from '../../js/config.js';
+import { createRng } from '../support/rng.js';
+
+function shapeFromRing(ring) {
+    const unrolled = unrollRing(ring);
+    return { ring: unrolled, bbox: ringBbox(unrolled) };
+}
 
 const SQUARE = [{ lat: 0, lng: 0 }, { lat: 0, lng: 10 }, { lat: 10, lng: 10 }, { lat: 10, lng: 0 }];
 
@@ -106,5 +113,42 @@ describe('diameterKm', () => {
         const start = performance.now();
         diameterKm(ring, 2);
         expect(performance.now() - start).toBeLessThan(100);
+    });
+});
+
+describe('randomPointInShape', () => {
+    const square = shapeFromRing(SQUARE);
+
+    it('returns only points that satisfy containsPoint (1000 draws)', () => {
+        const rng = createRng(42);
+        for (let i = 0; i < 1000; i++) {
+            const point = randomPointInShape(square, rng);
+            expect(point).not.toBeNull();
+            expect(containsPoint(point, square)).toBe(true);
+        }
+    });
+
+    it('succeeds on the first attempt for a square with a fixed rng', () => {
+        let calls = 0;
+        const rng = () => { calls++; return 0.5; };
+        const point = randomPointInShape(square, rng);
+        expect(point).toEqual({ lat: 5, lng: 5 });
+        expect(calls).toBe(2);
+    });
+
+    it('returns null for a pathologically thin sliver after exhausting the attempt budget', () => {
+        // A near-zero-width diagonal sliver: at lat=5 it spans lng
+        // [5, 5.00000005] — every sample below lands outside it every time.
+        const sliver = shapeFromRing([
+            { lat: 0, lng: 0 },
+            { lat: 10, lng: 10.0000001 },
+            { lat: 10, lng: 10 },
+        ]);
+        let calls = 0;
+        const seq = [0.5, 0.01]; // -> point (5, 0.1), well clear of the sliver
+        const rng = () => { const v = seq[calls % 2]; calls++; return v; };
+        const point = randomPointInShape(sliver, rng);
+        expect(point).toBeNull();
+        expect(calls).toBe(CUSTOM_MAP.SAMPLE_ATTEMPTS * 2);
     });
 });
