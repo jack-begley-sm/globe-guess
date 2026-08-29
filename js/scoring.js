@@ -3,7 +3,7 @@
 // PURPOSE: Scoring logic based on distance and speed.
 //
 // DEPENDENCIES:
-//   - js/config.js      (MAX_SCORE, MAP_SETTINGS)
+//   - js/config.js      (MAX_SCORE, MAP_SETTINGS, SCORING)
 //
 // USED BY:
 //   - js/round.js       (calculates score for each round)
@@ -11,10 +11,11 @@
 // KEY FUNCTIONS:
 //   - calculateScore(guess, actual, time, limit, bonusEnabled, bonusPct)
 //   - distanceKm(lat1, lng1, lat2, lng2) haversine formula
-//   - scoreFromDistance(distanceKm) 5000 at 0km, 0 at 2000km+
+//   - scoreFromDistance(d, scaleKm) relative to play-area scale (item 16;
+//     calculateScore itself is threaded onto this in item 17)
 // ============================================================
 
-import { MAX_SCORE, MAP_SETTINGS } from './config.js';
+import { MAX_SCORE, MAP_SETTINGS, SCORING } from './config.js';
 
 export function calculateScore(guessLatLng, actualLatLng, timeTaken, timeLimit, speedBonusEnabled, speedBonusPct) {
     if (!guessLatLng) {
@@ -26,7 +27,7 @@ export function calculateScore(guessLatLng, actualLatLng, timeTaken, timeLimit, 
         actualLatLng.lat, actualLatLng.lng
     );
 
-    const baseScore = scoreFromDistance(dist);
+    const baseScore = legacyScoreFromDistance(dist);
     let speedScore = 0;
 
     if (speedBonusEnabled && baseScore > 0 && timeLimit > 0) {
@@ -58,14 +59,30 @@ function deg2rad(deg) {
     return deg * (Math.PI / 180);
 }
 
-function scoreFromDistance(dist) {
+function legacyScoreFromDistance(dist) {
     if (dist <= 0) return MAX_SCORE;
     if (dist >= MAP_SETTINGS.MAX_GUESS_DISTANCE) return 0;
 
-    // Exponential decay
-    // Score = MAX_SCORE * e^(-k * dist)
-    // We want Score = 0 (or near 0) at MAX_GUESS_DISTANCE
-    // Let's use a simpler linear/quadratic for now or a proper decay
     const normalizedDist = dist / MAP_SETTINGS.MAX_GUESS_DISTANCE;
     return MAX_SCORE * Math.pow(1 - normalizedDist, 2);
+}
+
+/**
+ * Score relative to the play area's own scale — see 01-scoring-model.md.
+ * `r = d / scaleKm` is the proportion of the way across the area; score
+ * is 0 from `r = CUTOFF_RATIO` onward, MAX_SCORE at `r = 0`.
+ * `calculateScore` doesn't call this yet (item 17 threads it through);
+ * this is the standalone reference implementation and its own tests.
+ * @param {number} d - great-circle distance, km
+ * @param {number} scaleKm - the play area's diameter, km; must be > 0
+ * @returns {number}
+ */
+export function scoreFromDistance(d, scaleKm) {
+    if (!(scaleKm > 0)) {
+        throw new Error(`scoreFromDistance: scaleKm must be a positive number, got ${scaleKm}`);
+    }
+
+    const r = d / scaleKm;
+    if (r >= SCORING.CUTOFF_RATIO) return 0;
+    return MAX_SCORE * Math.pow(1 - r / SCORING.CUTOFF_RATIO, SCORING.CURVE_EXPONENT);
 }

@@ -28,6 +28,11 @@ export const REGIONS = {
 };
 
 export const MAX_SCORE = 5000;
+
+export const SCORING = {
+    CUTOFF_RATIO: 0.45,   // proportion of the play area's diameter beyond which score is 0
+    CURVE_EXPONENT: 2     // p in MAX_SCORE * (1 - r/CUTOFF_RATIO)^p; tuned at item 24
+};
 export const DEFAULT_ROUNDS = 5;
 export const DEFAULT_TIME_LIMIT = 90;
 export const DEFAULT_SPEED_BONUS_PCT = 20;
