@@ -37,3 +37,19 @@ Feature: A custom area in a VS game
     Given a VS game with a custom area is in progress
     When a guest taps outside the play area
     Then no pin is placed
+
+  Scenario: Refreshing mid-game keeps the area for a guest
+    Given a guest is playing a VS game in a custom area
+    When the guest's session is restored after a refresh
+    Then the guest rejoins with the same play area
+
+  Scenario: Refreshing mid-game keeps the area for the host
+    Given a host is running a VS game in a custom area
+    When the host's session is restored after a refresh
+    Then the host's play area is the one from before the refresh
+
+  Scenario: A rapid double-click on Next does not create two rooms
+    Given the host has chosen VS mode with a custom area
+    When the host clicks Next twice in immediate succession
+    And the host confirms the area
+    Then only one room was ever created

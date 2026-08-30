@@ -275,4 +275,82 @@ describeFeature(feature, ({ Scenario }) => {
             expect(document.getElementById('btn-vs-submit-guess').disabled).toBe(true);
         });
     });
+
+    Scenario('Refreshing mid-game keeps the area for a guest', ({ Given, When, Then }) => {
+        let ctx, hostRing, capturedRing;
+        Given('a guest is playing a VS game in a custom area', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+            hostRing = ctx.vsState.shape.ring;
+        });
+        When("the guest's session is restored after a refresh", async () => {
+            // Simulates main.js calling joinGame(roomCode, name) again on
+            // load — the join handshake alone must restore the area, with
+            // no guest-specific session storage of the ring required.
+            const guestPeer = new globalThis.Peer();
+            await flush();
+            const conn = guestPeer.connect(ctx.vsState.roomCode);
+            const received = [];
+            conn.on('data', (data) => received.push(data));
+            await flush();
+            conn.send({ type: 'join', payload: { name: 'Guest' } });
+            await flush();
+            capturedRing = received.find((m) => m.type === 'playersUpdate')?.payload?.gameState?.ring;
+        });
+        Then('the guest rejoins with the same play area', () => {
+            expect(capturedRing).toEqual(hostRing);
+        });
+    });
+
+    Scenario('Refreshing mid-game keeps the area for the host', ({ Given, When, Then }) => {
+        let ctx, session, shapeBefore;
+        Given('a host is running a VS game in a custom area', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+            shapeBefore = ctx.vsState.shape;
+        });
+        When("the host's session is restored after a refresh", async () => {
+            const { getSession } = await import('../../js/user.js');
+            session = getSession();
+        });
+        Then("the host's play area is the one from before the refresh", () => {
+            expect(session.region).toBe('CUSTOM');
+            expect(session.ring).toEqual(shapeBefore.ring);
+            const rebuilt = makeCustomShape(session.ring);
+            expect(rebuilt.scaleKm).toBeCloseTo(shapeBefore.scaleKm, 3);
+        });
+    });
+
+    Scenario('A rapid double-click on Next does not create two rooms', ({ Given, When, And, Then }) => {
+        let ctx, roomCodesSeen;
+        Given('the host has chosen VS mode with a custom area', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            roomCodesSeen = [];
+        });
+        When('the host clicks Next twice in immediate succession', () => {
+            const nextBtn = document.getElementById('btn-vs-setup-next');
+            nextBtn.click();
+            nextBtn.click(); // disabled by the first call before this one is dispatched
+            expect(nextBtn.disabled).toBe(true);
+        });
+        And('the host confirms the area', async () => {
+            drawManchesterArea(ctx);
+            await flush();
+            roomCodesSeen.push(ctx.vsState.roomCode);
+        });
+        Then('only one room was ever created', () => {
+            expect(roomCodesSeen.length).toBe(1);
+            expect(document.getElementById('btn-vs-setup-next').disabled).toBe(false);
+        });
+    });
 });

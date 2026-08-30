@@ -19,6 +19,7 @@ import { initHost } from './js/vs-host.js';
 import { initSuHost } from './js/su-host.js';
 import { initAwards } from './js/awards.js';
 import { initCustomDraw, resetClassicLobbyRegionUI } from './js/custom-lobby.js';
+import { getShape, makeCustomShape } from './js/geo/shapes.js';
 
 import './css/base.css';
 import './css/layout.css';
@@ -260,6 +261,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (session.mode === 'vs') {
                 vsState.localPlayer.name = session.name;
                 vsState.gameMode = session.gameMode || 'vs';
+                if (session.region === 'CUSTOM' && session.ring) {
+                    try {
+                        vsState.region = 'CUSTOM';
+                        vsState.shape = makeCustomShape(session.ring);
+                    } catch (err) {
+                        console.warn('Session restore: could not rebuild custom shape from ring', err);
+                    }
+                } else if (session.region) {
+                    vsState.region = session.region;
+                    vsState.shape = getShape(session.region);
+                }
                 initHost(session.roomCode);
                 document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
                 document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
