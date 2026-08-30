@@ -3,6 +3,15 @@
 // PURPOSE: Verifies the PeerJS fake itself — a fake host and a fake
 //          guest can exchange a scripted payload with no real network.
 //          See .docs/custom-maps/05-conceptualization/S10-vs-mode.md.
+//
+// DEPENDENCIES:
+//   - test/support/fakes/peer.js (installPeerFake)
+//
+// USED BY:
+//   - npm test
+//
+// KEY FUNCTIONS:
+//   - none (test file)
 // ============================================================
 import { describe, it, expect } from 'vitest';
 import { installPeerFake } from '../support/fakes/peer.js';
