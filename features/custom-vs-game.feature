@@ -26,3 +26,14 @@ Feature: A custom area in a VS game
     Given a VS game with a custom area is in progress
     When a guest joins the room
     Then the guest's play area matches the host's
+
+  Scenario: All players are scored against the same scale
+    Given a VS game in a custom area whose scale is 200 km
+    When one player guesses 10 km away and another guesses 60 km away
+    Then the first scores 4190 points
+    And the second scores 962 points
+
+  Scenario: Guests cannot guess outside the area
+    Given a VS game with a custom area is in progress
+    When a guest taps outside the play area
+    Then no pin is placed

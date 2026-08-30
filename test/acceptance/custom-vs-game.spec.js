@@ -21,6 +21,7 @@ import { installPeerFake } from '../support/fakes/peer.js';
 import { installLeafletFakeCapturingMap } from '../support/fakes/leaflet.js';
 import { createGoogleMapsFake, makePanoData } from '../support/fakes/google-maps.js';
 import { makeCustomShape } from '../../js/geo/shapes.js';
+import { calculateScore } from '../../js/scoring.js';
 
 function loadIndexBody() {
     const html = readFileSync('index.html', 'utf-8');
@@ -223,6 +224,55 @@ describeFeature(feature, ({ Scenario }) => {
         Then("the guest's play area matches the host's", () => {
             expect(capturedRing).toBeTruthy();
             expect(makeCustomShape(capturedRing).scaleKm).toBeCloseTo(ctx.vsState.shape.scaleKm, 3);
+        });
+    });
+
+    Scenario('All players are scored against the same scale', ({ Given, When, Then, And }) => {
+        let scoreA, scoreB;
+        const HOME = { lat: 0, lng: 0 };
+        function guessAtDistanceKm(distKm) {
+            const R = 6371;
+            const dLngDeg = (distKm / R) * (180 / Math.PI);
+            return { lat: 0, lng: dLngDeg };
+        }
+        Given('a VS game in a custom area whose scale is 200 km', () => {});
+        When('one player guesses 10 km away and another guesses 60 km away', () => {
+            scoreA = calculateScore(guessAtDistanceKm(10), HOME, 0, 180, false, 0, 200).totalScore;
+            scoreB = calculateScore(guessAtDistanceKm(60), HOME, 0, 180, false, 0, 200).totalScore;
+        });
+        Then('the first scores 4190 points', () => {
+            const expected = Math.round(5000 * Math.pow(1 - (10 / 200) / 0.45, 1.5));
+            expect(expected).toBe(4190);
+            expect(scoreA).toBe(expected);
+        });
+        And('the second scores 962 points', () => {
+            const expected = Math.round(5000 * Math.pow(1 - (60 / 200) / 0.45, 1.5));
+            expect(expected).toBe(962);
+            expect(scoreB).toBe(expected);
+        });
+    });
+
+    Scenario('Guests cannot guess outside the area', ({ Given, When, Then }) => {
+        let ctx;
+        Given('a VS game with a custom area is in progress', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+            ctx.vsState.players.push({ name: 'P2', peerId: 'p2', connected: true, scores: [], guesses: [], hasSubmitted: false });
+            document.getElementById('btn-start-multiplayer').click();
+            await flush();
+        });
+        When('a guest taps outside the play area', async () => {
+            const map = ctx.getLastMap();
+            // Widget starts collapsed — first click only expands it.
+            map.fire('click', { latlng: ctx.L.latLng(10, 10) });
+            map.fire('click', { latlng: ctx.L.latLng(10, 10) }); // far outside the Manchester triangle
+        });
+        Then('no pin is placed', () => {
+            expect(document.getElementById('btn-vs-submit-guess').disabled).toBe(true);
         });
     });
 });
