@@ -8,6 +8,7 @@ import { getUser, setUser } from './user.js';
 import { initHost, kickPlayer as hostKickPlayer, broadcastEvent } from './vs-host.js';
 import { startVsRound } from './vs-round.js';
 import { getShape } from './geo/shapes.js';
+import { openCustomDraw } from './custom-lobby.js';
 
 const GITHUB_PAGES_URL = 'https://jack-begley-sm.github.io/globe-guess';
 
@@ -102,14 +103,23 @@ async function handleSetupNext() {
     const roundsBtn = document.querySelector('#control-vs-rounds button.active');
     vsState.totalRounds = parseInt(roundsBtn.dataset.value);
 
-    const regionBtn = document.querySelector('#vs-region-grid button.active');
-    vsState.region = regionBtn.dataset.region;
-    vsState.shape = getShape(vsState.region);
-
-    // Re-hosting an existing room (e.g. "Play Again" after a game ends) —
-    // keep the same room code, peer connection, and player list instead of
-    // tearing down the live peer and disconnecting everyone into a new lobby.
+    // Re-hosting an existing room ("Play Again") keeps the same room code,
+    // peer connection, player list, and region/shape — checked BEFORE the
+    // region grid is read at all, so re-hosting never overwrites an
+    // already-drawn Custom area (or any other region) with whatever the
+    // grid happens to show underneath.
     if (vsState.roomCode) {
+        // A re-host can still pick a DIFFERENT built-in region on this screen
+        // (e.g. World -> Africa for game 2) — only a genuine, non-CUSTOM
+        // change takes effect here. Selecting CUSTOM on a re-host is a no-op:
+        // no draw screen opens from this path, and an existing drawn area is
+        // deliberately kept rather than forcing a redraw.
+        const regionBtn = document.querySelector('#vs-region-grid button.active');
+        const region = regionBtn?.dataset.region;
+        if (region && region !== 'CUSTOM' && region !== vsState.region) {
+            vsState.region = region;
+            vsState.shape = getShape(region);
+        }
         document.getElementById('screen-vs-setup').classList.add('hidden');
         document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
         const lobbyCodeEl = document.getElementById('lobby-room-code');
@@ -118,6 +128,38 @@ async function handleSetupNext() {
         return;
     }
 
+    const regionBtn = document.querySelector('#vs-region-grid button.active');
+    const region = regionBtn.dataset.region;
+
+    if (region === 'CUSTOM') {
+        // Per S10-vs-mode.md: the area must exist before the room does, so
+        // no guest can ever connect to a room whose play area is
+        // undefined. Room creation moves into the onConfirm callback.
+        // Next stays disabled for the whole drawing gap (both the confirm
+        // and the back path clear it) so a rapid double-tap on Next can't
+        // slip a second draw-screen visit in and end up creating two rooms.
+        const nextBtn = document.getElementById('btn-vs-setup-next');
+        const backBtn = document.getElementById('btn-custom-back');
+        nextBtn.disabled = true;
+        const reenableOnBack = () => { nextBtn.disabled = false; };
+        backBtn?.addEventListener('click', reenableOnBack, { once: true });
+
+        openCustomDraw('screen-vs-setup', (shape) => {
+            backBtn?.removeEventListener('click', reenableOnBack);
+            nextBtn.disabled = false;
+            vsState.region = 'CUSTOM';
+            vsState.shape = shape;
+            createRoomAndShowShareScreen(name);
+        });
+        return;
+    }
+
+    vsState.region = region;
+    vsState.shape = getShape(region);
+    createRoomAndShowShareScreen(name);
+}
+
+function createRoomAndShowShareScreen(name) {
     const roomCode = generateRoomCode();
     vsState.roomCode = roomCode;
     vsState.localPlayer.peerId = roomCode;

@@ -5,7 +5,7 @@ import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
-import { getShape } from './geo/shapes.js';
+import { getShape, makeCustomShape } from './geo/shapes.js';
 import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let timerInterval;
@@ -126,14 +126,16 @@ export function resumeInProgressRound(gameState) {
     vsState.gameOver = false;
     vsState.currentRound = gameState.currentRound;
     vsState.totalRounds = gameState.totalRounds;
-    vsState.region = gameState.region;
     try {
-        vsState.shape = getShape(vsState.region);
+        const shape = (gameState.region === 'CUSTOM' && gameState.ring)
+            ? makeCustomShape(gameState.ring)
+            : getShape(gameState.region);
+        vsState.region = gameState.region;
+        vsState.shape = shape;
     } catch (err) {
-        // Peer-supplied region (e.g. a version-skewed host, or a future
-        // 'CUSTOM' id getShape doesn't recognise) must not crash a
-        // reconnect — keep the previous shape and log it instead.
-        console.warn(`resumeInProgressRound: unusable region '${vsState.region}' from peer`, err);
+        // Peer-supplied region/ring (e.g. a version-skewed host) must not
+        // crash a reconnect — keep the previous region/shape and log it instead.
+        console.warn(`resumeInProgressRound: unusable region '${gameState.region}' from peer`, err);
     }
     vsState.currentLocation = gameState.currentLocation;
 
@@ -463,10 +465,18 @@ export function onAllGuessesReceived() {
     roundResults.closestPlayerId = closestPlayerId;
  
     if (vsState.gameMode === 'coop') {
-        // In Co-op, everyone gets the same score for the round (the best one)
+        // In Co-op, everyone gets the same score for the round (the best one).
+        // roundResults.guesses[peerId].score must be overwritten too, not just
+        // player.scores: showRoundReveal() below re-applies scores from that
+        // object (so guests, who only ever see the broadcast payload, land on
+        // the right number) — leaving it at each player's individual score
+        // silently clobbered every non-closest player's score back down.
         const bestScore = closestPlayerId ? roundResults.guesses[closestPlayerId].score : 0;
         vsState.players.forEach(player => {
             player.scores[vsState.currentRound - 1] = bestScore;
+            if (roundResults.guesses[player.peerId]) {
+                roundResults.guesses[player.peerId].score = bestScore;
+            }
         });
         roundResults.bestScore = bestScore;
     }

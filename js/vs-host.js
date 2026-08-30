@@ -37,7 +37,15 @@ let hostAloneSeconds = 60;
 
 export function initHost(roomCode) {
     registerBroadcast(broadcastEvent);
-    saveSession({ roomCode, name: vsState.localPlayer.name, role: 'host', mode: 'vs', gameMode: vsState.gameMode });
+    saveSession({
+        roomCode,
+        name: vsState.localPlayer.name,
+        role: 'host',
+        mode: 'vs',
+        gameMode: vsState.gameMode,
+        region: vsState.region,
+        ring: vsState.region === 'CUSTOM' ? vsState.shape.ring : undefined
+    });
     requestWakeLock();
 
     // CHANGE 2: Refer to the global variable, don't use 'let' or 'const' here
@@ -142,6 +150,7 @@ function broadcastPlayers() {
             currentRound: vsState.currentRound,
             totalRounds: vsState.totalRounds,
             region: vsState.region,
+            ring: vsState.shape.ring,
             currentLocation: vsState.currentLocation,
             timeLimit: vsState.timeLimit,
             timerStart: vsState.timerStart
