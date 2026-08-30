@@ -5,7 +5,7 @@ import { calculateScore } from './scoring.js';
 import { MAP_SETTINGS } from './config.js';
 import { showVsResults } from './vs-results.js';
 import { broadcastEvent, sendVsGuess as guestSendGuess } from './vs-network.js';
-import { getShape } from './geo/shapes.js';
+import { getShape, makeCustomShape } from './geo/shapes.js';
 import { drawShapeOverlay, guardClick, fitMapToShape } from './map-overlay.js';
 
 let timerInterval;
@@ -128,11 +128,12 @@ export function resumeInProgressRound(gameState) {
     vsState.totalRounds = gameState.totalRounds;
     vsState.region = gameState.region;
     try {
-        vsState.shape = getShape(vsState.region);
+        vsState.shape = (vsState.region === 'CUSTOM' && gameState.ring)
+            ? makeCustomShape(gameState.ring)
+            : getShape(vsState.region);
     } catch (err) {
-        // Peer-supplied region (e.g. a version-skewed host, or a future
-        // 'CUSTOM' id getShape doesn't recognise) must not crash a
-        // reconnect — keep the previous shape and log it instead.
+        // Peer-supplied region/ring (e.g. a version-skewed host) must not
+        // crash a reconnect — keep the previous shape and log it instead.
         console.warn(`resumeInProgressRound: unusable region '${vsState.region}' from peer`, err);
     }
     vsState.currentLocation = gameState.currentLocation;

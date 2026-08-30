@@ -129,4 +129,100 @@ describeFeature(feature, ({ Scenario }) => {
             expect(document.getElementById('lobby-room-code').textContent).toContain(ctx.vsState.roomCode);
         });
     });
+
+    Scenario('A guest joining receives the area', ({ Given, When, Then }) => {
+        let ctx, capturedRing;
+        Given('a host has created a VS room with a custom area', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+        });
+        When("a guest joins the room", async () => {
+            // Stand in for the guest using the raw Peer fake (see the
+            // Task 2 note on why the real vs-guest.js module isn't used
+            // here) — connects, sends 'join', and records the ring the
+            // real vs-host.js broadcasts back.
+            const guestPeer = new globalThis.Peer();
+            await flush();
+            const conn = guestPeer.connect(ctx.vsState.roomCode);
+            const received = [];
+            conn.on('data', (data) => received.push(data));
+            await flush();
+            conn.send({ type: 'join', payload: { name: 'Guest' } });
+            await flush();
+            const update = received.find((m) => m.type === 'playersUpdate');
+            capturedRing = update?.payload?.gameState?.ring;
+        });
+        Then("the guest's play area matches the host's", () => {
+            expect(capturedRing).toBeTruthy();
+            const rebuilt = makeCustomShape(capturedRing);
+            expect(rebuilt.scaleKm).toBeCloseTo(ctx.vsState.shape.scaleKm, 3);
+        });
+    });
+
+    Scenario('A guest in the lobby already knows the area', ({ Given, And, Then }) => {
+        let ctx, capturedRing, capturedInProgress;
+        Given('a host has created a VS room with a custom area', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+        });
+        And('a guest has joined but the game has not started', async () => {
+            const guestPeer = new globalThis.Peer();
+            await flush();
+            const conn = guestPeer.connect(ctx.vsState.roomCode);
+            const received = [];
+            conn.on('data', (data) => received.push(data));
+            await flush();
+            conn.send({ type: 'join', payload: { name: 'Guest' } });
+            await flush();
+            const update = received.find((m) => m.type === 'playersUpdate');
+            capturedRing = update?.payload?.gameState?.ring;
+            capturedInProgress = update?.payload?.gameState?.inProgress;
+        });
+        Then("the guest's play area matches the host's", () => {
+            expect(capturedInProgress).toBe(false); // proves this arrived before kickoff, not via a round-start message
+            expect(capturedRing).toBeTruthy();
+            expect(makeCustomShape(capturedRing).scaleKm).toBeCloseTo(ctx.vsState.shape.scaleKm, 3);
+        });
+    });
+
+    Scenario('A guest joining mid-game receives the area', ({ Given, When, Then }) => {
+        let ctx, capturedRing;
+        Given('a VS game with a custom area is in progress', async () => {
+            ctx = await freshVsHost();
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+            // A second player is required before Start is enabled.
+            ctx.vsState.players.push({ name: 'P2', peerId: 'p2', connected: true, scores: [], guesses: [], hasSubmitted: false });
+            document.getElementById('btn-start-multiplayer').click();
+            await flush();
+        });
+        When('a guest joins the room', async () => {
+            const guestPeer = new globalThis.Peer();
+            await flush();
+            const conn = guestPeer.connect(ctx.vsState.roomCode);
+            const received = [];
+            conn.on('data', (data) => received.push(data));
+            await flush();
+            conn.send({ type: 'join', payload: { name: 'Guest2' } });
+            await flush();
+            const update = received.find((m) => m.type === 'playersUpdate');
+            capturedRing = update?.payload?.gameState?.ring;
+            expect(update.payload.gameState.inProgress).toBe(true);
+        });
+        Then("the guest's play area matches the host's", () => {
+            expect(capturedRing).toBeTruthy();
+            expect(makeCustomShape(capturedRing).scaleKm).toBeCloseTo(ctx.vsState.shape.scaleKm, 3);
+        });
+    });
 });

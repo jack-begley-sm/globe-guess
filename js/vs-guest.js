@@ -10,6 +10,7 @@ import { handleVsEvent, resumeInProgressRound } from './vs-round.js';
 import { saveSession } from './user.js';
 import { registerSendGuess } from './vs-network.js';
 import { PEER_CONFIG  } from './peer-config.js';
+import { makeCustomShape } from './geo/shapes.js';
 
 let vsGuestPeer = null;
 let hostConn = null;
@@ -127,6 +128,21 @@ function handleEvent(type, payload) {
         if (payload.gameMode) {
             vsState.gameMode = payload.gameMode;
         }
+
+        // A guest sitting in the lobby before kickoff previously had no
+        // play area at all — nothing read the region before a round
+        // started, which was invisible for built-in regions but a real
+        // bug for Custom, whose guess map needs an outline the moment it
+        // opens. Rebuild it here too, not only in resumeInProgressRound.
+        if (payload.gameState?.region === 'CUSTOM' && payload.gameState.ring) {
+            try {
+                vsState.region = 'CUSTOM';
+                vsState.shape = makeCustomShape(payload.gameState.ring);
+            } catch (err) {
+                console.warn('playersUpdate: could not rebuild custom shape from ring', err);
+            }
+        }
+
         renderPlayerList();
 
         if (payload.gameMode === 'su') {

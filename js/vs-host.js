@@ -142,6 +142,7 @@ function broadcastPlayers() {
             currentRound: vsState.currentRound,
             totalRounds: vsState.totalRounds,
             region: vsState.region,
+            ring: vsState.shape.ring,
             currentLocation: vsState.currentLocation,
             timeLimit: vsState.timeLimit,
             timerStart: vsState.timerStart
