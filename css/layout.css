@@ -131,12 +131,27 @@
 .lobby-card {
     display: flex;
     width: -webkit-fill-available;
-    height: -webkit-fill-available;
+    /* min-height: 100% of #screen-lobby (a .screen, itself height:100%),
+       not -webkit-fill-available/stretch — that keyword resolves to a
+       fixed length that clips content taller than it, same as a plain
+       `height` would; it is NOT a true CSS minimum against the box's own
+       content height the way a percentage is. A fixed height here clips
+       once content (e.g. an 8-tile .region-grid) needs more room than
+       the screen has, and that clipped overflow does NOT register as
+       scrollable content on the parent .screen — the last row ends up
+       genuinely unreachable, not just needing a scroll. min-height: 100%
+       keeps the "fill the screen" look for short content while letting
+       the card grow past the viewport for tall content, so .screen's
+       own overflow-y: auto can actually scroll to all of it. */
+    min-height: 100%;
     background-color: var(--color-bg);
     border-radius: var(--radius-card);
     padding: 24px;
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    margin-bottom: 80px;
+    /* Clears .lobby-footer's actual height (16px+16px padding + the 56px
+       START button = 88px) plus headroom, so the last scrolled-to row
+       isn't sitting right at the footer's edge. */
+    margin-bottom: 120px;
     flex-direction: column;
 }
 
