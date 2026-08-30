@@ -464,10 +464,18 @@ export function onAllGuessesReceived() {
     roundResults.closestPlayerId = closestPlayerId;
  
     if (vsState.gameMode === 'coop') {
-        // In Co-op, everyone gets the same score for the round (the best one)
+        // In Co-op, everyone gets the same score for the round (the best one).
+        // roundResults.guesses[peerId].score must be overwritten too, not just
+        // player.scores: showRoundReveal() below re-applies scores from that
+        // object (so guests, who only ever see the broadcast payload, land on
+        // the right number) — leaving it at each player's individual score
+        // silently clobbered every non-closest player's score back down.
         const bestScore = closestPlayerId ? roundResults.guesses[closestPlayerId].score : 0;
         vsState.players.forEach(player => {
             player.scores[vsState.currentRound - 1] = bestScore;
+            if (roundResults.guesses[player.peerId]) {
+                roundResults.guesses[player.peerId].score = bestScore;
+            }
         });
         roundResults.bestScore = bestScore;
     }

@@ -364,4 +364,37 @@ describeFeature(feature, ({ Scenario }) => {
             expect(document.getElementById('btn-vs-setup-next').disabled).toBe(false);
         });
     });
+
+    Scenario('Co-op games support a custom area the same way', ({ Given, When, Then }) => {
+        let ctx;
+        const HOME = { lat: 0, lng: 0 };
+        function guessAtDistanceKm(distKm) {
+            const R = 6371;
+            const dLngDeg = (distKm / R) * (180 / Math.PI);
+            return { lat: 0, lng: dLngDeg };
+        }
+        Given('a Co-op game in a custom area whose scale is 200 km', async () => {
+            ctx = await freshVsHost();
+            ctx.vsState.gameMode = 'coop';
+            document.getElementById('input-vs-host-name').value = 'Host';
+            document.querySelector('#vs-region-grid button[data-region="CUSTOM"]').click();
+            document.getElementById('btn-vs-setup-next').click();
+            drawManchesterArea(ctx);
+            await flush();
+            ctx.vsState.shape = { ...ctx.vsState.shape, scaleKm: 200 }; // fix the scale so the Gherkin numbers are exact
+            ctx.vsState.currentLocation = HOME;
+            ctx.vsState.players = [
+                { name: 'A', peerId: 'a', connected: true, scores: [], guesses: [guessAtDistanceKm(10)], hasSubmitted: true, lastTimeTaken: 0 },
+                { name: 'B', peerId: 'b', connected: true, scores: [], guesses: [guessAtDistanceKm(60)], hasSubmitted: true, lastTimeTaken: 0 },
+            ];
+            ctx.vsState.currentRound = 1;
+        });
+        When('one player guesses 10 km away and another guesses 60 km away', () => {
+            ctx.vsRound.onAllGuessesReceived();
+        });
+        Then('everyone is awarded the best score of 4190 points', () => {
+            expect(ctx.vsState.players[0].scores[0]).toBe(4190);
+            expect(ctx.vsState.players[1].scores[0]).toBe(4190);
+        });
+    });
 });

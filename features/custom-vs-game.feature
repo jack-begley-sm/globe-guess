@@ -53,3 +53,8 @@ Feature: A custom area in a VS game
     When the host clicks Next twice in immediate succession
     And the host confirms the area
     Then only one room was ever created
+
+  Scenario: Co-op games support a custom area the same way
+    Given a Co-op game in a custom area whose scale is 200 km
+    When one player guesses 10 km away and another guesses 60 km away
+    Then everyone is awarded the best score of 4190 points
