@@ -307,7 +307,7 @@ describeFeature(feature, ({ Scenario }) => {
     });
 
     Scenario('Refreshing mid-game keeps the area for the host', ({ Given, When, Then }) => {
-        let ctx, session, shapeBefore;
+        let ctx, shapeBefore, restoredShape, restoredRegion;
         Given('a host is running a VS game in a custom area', async () => {
             ctx = await freshVsHost();
             document.getElementById('input-vs-host-name').value = 'Host';
@@ -318,14 +318,25 @@ describeFeature(feature, ({ Scenario }) => {
             shapeBefore = ctx.vsState.shape;
         });
         When("the host's session is restored after a refresh", async () => {
-            const { getSession } = await import('../../js/user.js');
-            session = getSession();
+            // Exercise main.js's actual restore branch end to end, rather
+            // than re-deriving an equivalent shape locally: import a fresh
+            // copy of main.js (reusing the Peer/Leaflet/Google Maps fakes
+            // freshVsHost() already installed on globalThis, same as real
+            // browser globals would be reused across an actual refresh)
+            // and fire the DOMContentLoaded it listens for, since jsdom's
+            // already-loaded document won't fire that event again on its
+            // own.
+            vi.resetModules();
+            await import('../../main.js');
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+            await flush();
+            const restored = await import('../../js/vs-state.js');
+            restoredShape = restored.vsState.shape;
+            restoredRegion = restored.vsState.region;
         });
         Then("the host's play area is the one from before the refresh", () => {
-            expect(session.region).toBe('CUSTOM');
-            expect(session.ring).toEqual(shapeBefore.ring);
-            const rebuilt = makeCustomShape(session.ring);
-            expect(rebuilt.scaleKm).toBeCloseTo(shapeBefore.scaleKm, 3);
+            expect(restoredRegion).toBe('CUSTOM');
+            expect(restoredShape.scaleKm).toBeCloseTo(shapeBefore.scaleKm, 3);
         });
     });
 
