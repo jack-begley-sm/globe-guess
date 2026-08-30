@@ -261,16 +261,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (session.mode === 'vs') {
                 vsState.localPlayer.name = session.name;
                 vsState.gameMode = session.gameMode || 'vs';
-                if (session.region === 'CUSTOM' && session.ring) {
-                    try {
+                try {
+                    if (session.region === 'CUSTOM' && session.ring) {
+                        const shape = makeCustomShape(session.ring);
                         vsState.region = 'CUSTOM';
-                        vsState.shape = makeCustomShape(session.ring);
-                    } catch (err) {
-                        console.warn('Session restore: could not rebuild custom shape from ring', err);
+                        vsState.shape = shape;
+                    } else if (session.region) {
+                        const shape = getShape(session.region);
+                        vsState.region = session.region;
+                        vsState.shape = shape;
                     }
-                } else if (session.region) {
-                    vsState.region = session.region;
-                    vsState.shape = getShape(session.region);
+                } catch (err) {
+                    console.warn('Session restore: could not rebuild play area from session', err);
                 }
                 initHost(session.roomCode);
                 document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));

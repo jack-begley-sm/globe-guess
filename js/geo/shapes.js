@@ -52,19 +52,31 @@ export function getShape(regionId) {
 
 /**
  * Builds a Shape for a player-drawn ring. Unrolls it first, then
- * rejects a ring that could never be a legal play area: fewer than 3
- * vertices, an unrolled span of 360 degrees or more, or a self-crossing
- * boundary. (These are also enforced live at draw time in
- * custom-draft.js — this is the last-line guard for the Shape boundary,
- * not a full re-check; it does not re-enforce the max-vertex limit,
- * since that's only meaningful while every ring comes from the local
- * drawing UI. Revisit if a ring ever arrives over the network.)
+ * rejects a ring that could never be a legal play area: not an array,
+ * a point with a non-finite lat/lng, fewer than 3 vertices, more than
+ * CUSTOM_MAP.MAX_VERTICES, an unrolled span of 360 degrees or more, or
+ * a self-crossing boundary. (These are also enforced live at draw time
+ * in custom-draft.js — this is the last-line guard for the Shape
+ * boundary, not a full re-check. `js/vs-guest.js` and `js/vs-round.js`
+ * also call this on rings that arrived over PeerJS from a host, so the
+ * vertex cap and finite-number checks matter here too, not just for
+ * locally-drawn rings — a hand-modified or buggy host could otherwise
+ * send a ring that freezes ringIsSimple's O(n^2) loops.)
  * @param {import('./polygon.js').Ring} ring - as drawn, not yet unrolled
  * @returns {import('./polygon.js').Shape}
  */
 export function makeCustomShape(ring) {
+    if (!Array.isArray(ring)) {
+        throw new Error('makeCustomShape: ring must be an array');
+    }
     if (ring.length < 3) {
         throw new Error('makeCustomShape: ring needs at least 3 vertices');
+    }
+    if (ring.length > CUSTOM_MAP.MAX_VERTICES) {
+        throw new Error(`makeCustomShape: ring exceeds ${CUSTOM_MAP.MAX_VERTICES} vertices`);
+    }
+    if (ring.some((p) => !p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng))) {
+        throw new Error('makeCustomShape: ring contains a non-finite lat/lng');
     }
 
     const unrolled = unrollRing(ring);

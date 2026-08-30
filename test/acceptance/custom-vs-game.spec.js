@@ -6,16 +6,16 @@
 //
 // DEPENDENCIES:
 //   - features/custom-vs-game.feature
-//   - js/vs-lobby.js, js/vs-host.js, js/vs-guest.js, js/vs-round.js,
-//     js/vs-state.js
+//   - js/vs-lobby.js, js/vs-host.js, js/vs-round.js, js/vs-state.js
 //   - js/geo/shapes.js (makeCustomShape, for wire-format assertions)
+//   - js/scoring.js (calculateScore, for scoring scenarios)
 //   - test/support/fakes/peer.js, leaflet.js
 //
 // USED BY:
 //   - npm test
 // ============================================================
 import { loadFeature, describeFeature } from '@amiceli/vitest-cucumber';
-import { expect, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { installPeerFake } from '../support/fakes/peer.js';
 import { installLeafletFakeCapturingMap } from '../support/fakes/leaflet.js';
@@ -142,10 +142,18 @@ describeFeature(feature, ({ Scenario }) => {
             await flush();
         });
         When("a guest joins the room", async () => {
-            // Stand in for the guest using the raw Peer fake (see the
-            // Task 2 note on why the real vs-guest.js module isn't used
-            // here) — connects, sends 'join', and records the ring the
-            // real vs-host.js broadcasts back.
+            // Stand in for the guest using the raw Peer fake rather than
+            // the real js/vs-guest.js. vsState is a module-level singleton,
+            // so running the real js/vs-host.js and the real js/vs-guest.js
+            // as two simultaneously-live module instances in one test isn't
+            // straightforward — they'd share that one vsState, not two
+            // independent ones representing separate "devices". Using a
+            // FakePeer here connects, sends 'join', and captures the exact
+            // wire payload the real host broadcasts, then verifies it
+            // deserializes correctly via the same pure makeCustomShape
+            // function guest code uses. That proves the WIRE FORMAT is
+            // correct, but does NOT exercise js/vs-guest.js's own
+            // playersUpdate/resumeInProgressRound rebuild logic.
             const guestPeer = new globalThis.Peer();
             await flush();
             const conn = guestPeer.connect(ctx.vsState.roomCode);
@@ -326,6 +334,13 @@ describeFeature(feature, ({ Scenario }) => {
             // and fire the DOMContentLoaded it listens for, since jsdom's
             // already-loaded document won't fire that event again on its
             // own.
+            // main.js registers document-level listeners (mode buttons, join
+            // form, etc.) that this import does not tear down — they stay
+            // registered for the rest of this test run. Confirmed dormant:
+            // no later scenario re-dispatches the events they'd react to,
+            // and each scenario's own installPeerFake() replaces the
+            // fake-peer registry wholesale. Any FUTURE scenario appended
+            // after this one should not assume a pristine `document`.
             vi.resetModules();
             await import('../../main.js');
             document.dispatchEvent(new Event('DOMContentLoaded'));
@@ -396,5 +411,33 @@ describeFeature(feature, ({ Scenario }) => {
             expect(ctx.vsState.players[0].scores[0]).toBe(4190);
             expect(ctx.vsState.players[1].scores[0]).toBe(4190);
         });
+    });
+});
+
+// Review-driven regression test for the "Playing again keeps the area"
+// scenario above: that scenario only proves a CUSTOM area survives
+// re-hosting, not that picking a DIFFERENT built-in region on the re-host
+// screen actually takes effect. It didn't — the re-host early-return in
+// handleSetupNext ran before the region grid was ever read, so a host who
+// switched from World to UK for game 2 got no effect at all, with no
+// feedback either way. See js/vs-lobby.js's handleSetupNext.
+describe('Play Again with a different built-in region selected', () => {
+    it('applies the new region instead of silently keeping the old one', async () => {
+        const ctx = await freshVsHost();
+        document.getElementById('input-vs-host-name').value = 'Host';
+        document.querySelector('#vs-region-grid button[data-region="WORLD"]').click();
+        document.getElementById('btn-vs-setup-next').click();
+        await flush();
+        expect(ctx.vsState.region).toBe('WORLD');
+        expect(ctx.vsState.roomCode).toBeTruthy();
+
+        ctx.vsState.gameOver = true;
+
+        document.getElementById('input-vs-host-name').value = 'Host';
+        document.querySelector('#vs-region-grid button[data-region="UK"]').click();
+        document.getElementById('btn-vs-setup-next').click();
+        await flush();
+
+        expect(ctx.vsState.region).toBe('UK');
     });
 });

@@ -109,6 +109,17 @@ async function handleSetupNext() {
     // already-drawn Custom area (or any other region) with whatever the
     // grid happens to show underneath.
     if (vsState.roomCode) {
+        // A re-host can still pick a DIFFERENT built-in region on this screen
+        // (e.g. World -> Africa for game 2) — only a genuine, non-CUSTOM
+        // change takes effect here. Selecting CUSTOM on a re-host is a no-op:
+        // no draw screen opens from this path, and an existing drawn area is
+        // deliberately kept rather than forcing a redraw.
+        const regionBtn = document.querySelector('#vs-region-grid button.active');
+        const region = regionBtn?.dataset.region;
+        if (region && region !== 'CUSTOM' && region !== vsState.region) {
+            vsState.region = region;
+            vsState.shape = getShape(region);
+        }
         document.getElementById('screen-vs-setup').classList.add('hidden');
         document.getElementById('screen-multiplayer-lobby').classList.remove('hidden');
         const lobbyCodeEl = document.getElementById('lobby-room-code');
